@@ -252,6 +252,16 @@ export function AdminShell({ currentUser, sections, children }: AdminShellProps)
                 label="Media"
               />
               <NavLink
+                href={buildHref("/admin/form-data", locale)}
+                isActive={pathname === "/admin/form-data"}
+                label="Form Data"
+              />
+              <NavLink
+                href={buildHref("/admin/pages", locale)}
+                isActive={pathname === "/admin/pages" || pathname.startsWith("/admin/pages/")}
+                label="Pages"
+              />
+              <NavLink
                 href={buildHref("/admin/admin-users", locale)}
                 isActive={pathname === "/admin/admin-users"}
                 label="Admin Users"

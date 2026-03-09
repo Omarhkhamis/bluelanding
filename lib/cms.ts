@@ -8,15 +8,23 @@ import { Pool, type PoolClient } from "pg";
 import {
   badges,
   beforeAfterItems,
+  certificatesGalleryDefaults,
   clinicGallery,
   faqItems,
+  googleReviewsDefaults,
   heroGridImages,
   hotelFeatures,
   influencerVideos,
+  lpbmFooterDefaults,
+  lpbmHeaderDefaults,
+  lpbmHeroDefaults,
+  luckySpinDefaults,
   navLinks,
   serviceDetailCards,
   services,
   socialLinks,
+  treatmentMatrixDefaults,
+  trustpilotReviewsDefaults,
   whatsappUrl,
   whyChooseItems
 } from "@/lib/site-data";
@@ -130,8 +138,317 @@ export type AdminUser = {
   createdAt: string;
 };
 
+export type FormSubmission = {
+  id: number;
+  locale: string;
+  source: string;
+  formName: string;
+  page: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  message: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+};
+
 export const supportedDashboardLocales = ["en", "ru"] as const;
 export type DashboardLocale = (typeof supportedDashboardLocales)[number];
+export const managedPageKeys = ["thankyou", "privacy-policy", "terms"] as const;
+export type ManagedPageKey = (typeof managedPageKeys)[number];
+
+export type ManagedPage = {
+  id: number;
+  key: ManagedPageKey;
+  locale: string;
+  title: string;
+  content: string;
+  updatedAt: string;
+};
+
+const defaultManagedPageCopy: Record<
+  ManagedPageKey,
+  Record<DashboardLocale, { title: string; content: string }>
+> = {
+  thankyou: {
+    en: {
+      title: "Thank You",
+      content:
+        "Thank you for trusting our clinic.\n\nWe received your request and are preparing the best plan for you.\n\nA patient coordinator will review your details, call you to confirm the next steps, and share the available time slots.\n\nIf you would like to talk now, use the call or WhatsApp buttons below."
+    },
+    ru: {
+      title: "Спасибо",
+      content:
+        "Спасибо за доверие к нашей клинике.\n\nМы получили ваш запрос и готовим для вас лучший план лечения.\n\nКоординатор по работе с пациентами рассмотрит ваши данные, свяжется с вами по телефону, чтобы подтвердить следующие шаги, и сообщит о доступных временных слотах.\n\nЕсли хотите поговорить сейчас, воспользуйтесь кнопками звонка или WhatsApp ниже."
+    }
+  },
+  "privacy-policy": {
+    en: {
+      title: "Privacy Policy",
+      content:
+        "We value your privacy and are committed to protecting your personal information.\n\nWe only collect data that is necessary to provide our services, improve your experience, and communicate with you when needed.\n\nWe do not sell or share your information with third parties except where required by law or to deliver services you have requested.\n\nYou can request access to your data or ask us to delete it at any time by contacting our support team."
+    },
+    ru: {
+      title: "Политика конфиденциальности",
+      content:
+        "Мы ценим вашу конфиденциальность и обязуемся защищать вашу личную информацию.\n\nМы собираем только те данные, которые необходимы для предоставления услуг, улучшения вашего опыта и связи с вами при необходимости.\n\nМы не продаём и не передаём вашу информацию третьим лицам, кроме случаев, предусмотренных законом или необходимых для оказания запрошенных вами услуг.\n\nВы можете запросить доступ к своим данным или попросить удалить их в любое время, связавшись с нашей службой поддержки."
+    }
+  },
+  terms: {
+    en: {
+      title: "Terms",
+      content:
+        "By using this website, you agree to the following terms and conditions.\n\nAll content is provided for informational purposes only and does not replace professional medical advice.\n\nAppointments, pricing, and treatment plans are confirmed after clinical assessment.\n\nWe reserve the right to update these terms at any time. Continued use of the website indicates your acceptance of any changes."
+    },
+    ru: {
+      title: "Условия",
+      content:
+        "Используя этот сайт, вы соглашаетесь со следующими условиями.\n\nВся информация предоставляется только в ознакомительных целях и не заменяет профессиональную медицинскую консультацию.\n\nЗаписи, стоимость и планы лечения подтверждаются после клинической оценки.\n\nМы оставляем за собой право обновлять эти условия в любое время. Продолжая пользоваться сайтом, вы подтверждаете согласие с изменениями."
+    }
+  }
+};
+
+type SeedSection = {
+  key: string;
+  name: string;
+  sectionType: string;
+  sortOrder: number;
+  heading?: string;
+  subheading?: string;
+  description?: string;
+  buttonLabel?: string;
+  buttonUrl?: string;
+  imageUrl?: string;
+  settings?: JsonValue;
+  items?: Array<{
+    itemType: string;
+    title?: string;
+    subtitle?: string;
+    description?: string;
+    imageUrl?: string;
+    videoUrl?: string;
+    linkUrl?: string;
+    altText?: string;
+    sortOrder: number;
+    settings?: JsonValue;
+  }>;
+};
+
+function getExtendedSectionSeeds(): SeedSection[] {
+  return [
+    {
+      key: "header-2",
+      name: "Header 2",
+      sectionType: "navigation",
+      sortOrder: -1,
+      heading: "Header 2",
+      settings: {
+        ...lpbmHeaderDefaults,
+        variant: "lpbm"
+      }
+    },
+    {
+      key: "hero-2",
+      name: "Hero 2",
+      sectionType: "static",
+      sortOrder: 0,
+      heading: lpbmHeroDefaults.titleLine1,
+      subheading: lpbmHeroDefaults.kicker,
+      description: lpbmHeroDefaults.subtitle,
+      buttonLabel: lpbmHeroDefaults.whatsappCta,
+      buttonUrl: whatsappUrl,
+      imageUrl: "/uploads/bm/hero-2.jpg",
+      settings: {
+        ...lpbmHeroDefaults,
+        variant: "lpbm"
+      },
+      items: [
+        ...heroGridImages.map((imageUrl, index) => ({
+          itemType: "image",
+          imageUrl,
+          altText: `Hero 2 image ${index + 1}`,
+          sortOrder: index
+        })),
+        ...badges.map((badge, index) => ({
+          itemType: "badge",
+          title: badge.alt,
+          imageUrl: badge.src,
+          altText: badge.alt,
+          sortOrder: 100 + index
+        }))
+      ]
+    },
+    {
+      key: "footer",
+      name: "Footer",
+      sectionType: "static",
+      sortOrder: 999,
+      heading: "Footer",
+      settings: lpbmFooterDefaults
+    },
+    {
+      key: "footer-2",
+      name: "Footer 2",
+      sectionType: "static",
+      sortOrder: 999,
+      heading: "Footer 2",
+      settings: {
+        ...lpbmFooterDefaults,
+        variant: "lpbm"
+      }
+    },
+    {
+      key: "treatment-matrix",
+      name: "Treatment Matrix",
+      sectionType: "matrix",
+      sortOrder: 11,
+      heading: treatmentMatrixDefaults.title,
+      subheading: treatmentMatrixDefaults.kicker,
+      description: treatmentMatrixDefaults.description,
+      settings: {
+        columns: treatmentMatrixDefaults.columns,
+        rows: treatmentMatrixDefaults.rows.map((values) => ({ values }))
+      }
+    },
+    {
+      key: "certificates-gallery",
+      name: "Certificates Gallery",
+      sectionType: "gallery",
+      sortOrder: 12,
+      heading: certificatesGalleryDefaults.title,
+      subheading: certificatesGalleryDefaults.kicker,
+      description: certificatesGalleryDefaults.description,
+      items: certificatesGalleryDefaults.items.map((item, index) => ({
+        itemType: "image",
+        imageUrl: item.image,
+        altText: item.alt,
+        sortOrder: index
+      }))
+    },
+    {
+      key: "google-reviews",
+      name: "Google Reviews",
+      sectionType: "reviews",
+      sortOrder: 13,
+      heading: googleReviewsDefaults.title,
+      subheading: googleReviewsDefaults.kicker,
+      description: googleReviewsDefaults.description,
+      buttonLabel: googleReviewsDefaults.ctaText,
+      buttonUrl: whatsappUrl,
+      settings: {
+        provider: "google",
+        rating: googleReviewsDefaults.rating,
+        ratingCountLabel: googleReviewsDefaults.ratingCountLabel
+      },
+      items: googleReviewsDefaults.items.map((item, index) => ({
+        itemType: "review",
+        title: item.name,
+        subtitle: item.count,
+        description: item.text,
+        altText: item.initials,
+        sortOrder: index
+      }))
+    },
+    {
+      key: "trustpilot-reviews",
+      name: "Trustpilot Reviews",
+      sectionType: "reviews",
+      sortOrder: 14,
+      heading: trustpilotReviewsDefaults.title,
+      subheading: trustpilotReviewsDefaults.kicker,
+      description: trustpilotReviewsDefaults.description,
+      buttonLabel: trustpilotReviewsDefaults.ctaText,
+      buttonUrl: whatsappUrl,
+      settings: {
+        provider: "trustpilot",
+        rating: trustpilotReviewsDefaults.rating,
+        ratingCountLabel: trustpilotReviewsDefaults.ratingCountLabel
+      },
+      items: trustpilotReviewsDefaults.items.map((item, index) => ({
+        itemType: "review",
+        title: item.name,
+        subtitle: item.count,
+        description: item.text,
+        altText: item.initials,
+        sortOrder: index
+      }))
+    },
+    {
+      key: "lucky-spin",
+      name: "Lucky Spin",
+      sectionType: "interactive",
+      sortOrder: 15,
+      heading: luckySpinDefaults.title,
+      subheading: luckySpinDefaults.kicker,
+      description: luckySpinDefaults.description,
+      buttonLabel: luckySpinDefaults.spinLabel,
+      buttonUrl: whatsappUrl,
+      imageUrl: luckySpinDefaults.backgroundImage,
+      settings: {
+        tagline: luckySpinDefaults.tagline,
+        resultLabel: luckySpinDefaults.resultLabel,
+        resultPlaceholder: luckySpinDefaults.resultPlaceholder,
+        spinLoadingLabel: luckySpinDefaults.spinLoadingLabel,
+        prizes: luckySpinDefaults.prizes,
+        formTitle: luckySpinDefaults.formTitle,
+        formDescription: luckySpinDefaults.formDescription,
+        formSubmitText: luckySpinDefaults.formSubmitText,
+        formPrivacyNote: luckySpinDefaults.formPrivacyNote,
+        backgroundAlt: luckySpinDefaults.backgroundAlt
+      }
+    }
+  ];
+}
+
+async function insertSeedSection(client: PoolClient, locale: string, section: SeedSection) {
+  await client.query(
+    `
+      INSERT INTO sections (
+        section_key, locale, name, section_type, sort_order, is_active, heading, subheading,
+        description, button_label, button_url, image_url, settings_json
+      ) VALUES ($1, $2, $3, $4, $5, TRUE, $6, $7, $8, $9, $10, $11, $12::jsonb)
+    `,
+    [
+      section.key,
+      locale,
+      section.name,
+      section.sectionType,
+      section.sortOrder,
+      section.heading || null,
+      section.subheading || null,
+      section.description || null,
+      section.buttonLabel || null,
+      section.buttonUrl || null,
+      section.imageUrl || null,
+      JSON.stringify(section.settings || null)
+    ]
+  );
+
+  for (const item of section.items || []) {
+    await client.query(
+      `
+        INSERT INTO section_items (
+          section_key, locale, item_type, title, subtitle, description, image_url,
+          video_url, link_url, alt_text, sort_order, is_active, settings_json
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE, $12::jsonb)
+      `,
+      [
+        section.key,
+        locale,
+        item.itemType,
+        item.title || null,
+        item.subtitle || null,
+        item.description || null,
+        item.imageUrl || null,
+        item.videoUrl || null,
+        item.linkUrl || null,
+        item.altText || null,
+        item.sortOrder,
+        JSON.stringify(item.settings || null)
+      ]
+    );
+  }
+}
 
 type AdminAuthUser = {
   id: number;
@@ -185,6 +502,40 @@ function getLegacyHeroNavLinks(settings: unknown) {
     parseJson<{ navLinks?: Array<{ href: string; label: string }> }>(settings)?.navLinks ||
     navLinks
   );
+}
+
+function normalizeManagedLocale(locale?: string): DashboardLocale {
+  return supportedDashboardLocales.includes(locale as DashboardLocale)
+    ? (locale as DashboardLocale)
+    : "en";
+}
+
+function getManagedPageDefault(
+  key: ManagedPageKey,
+  locale?: string
+): { title: string; content: string } {
+  const normalizedLocale = normalizeManagedLocale(locale);
+  return defaultManagedPageCopy[key][normalizedLocale];
+}
+
+export function getManagedPagePath(key: ManagedPageKey) {
+  return key === "thankyou" ? "/thankyou" : `/${key}`;
+}
+
+async function backfillDefaultPages() {
+  for (const key of managedPageKeys) {
+    for (const locale of supportedDashboardLocales) {
+      const page = getManagedPageDefault(key, locale);
+      await pool.query(
+        `
+          INSERT INTO pages (page_key, locale, title, content, updated_at)
+          VALUES ($1, $2, $3, $4, NOW())
+          ON CONFLICT (page_key, locale) DO NOTHING
+        `,
+        [key, locale, page.title, page.content]
+      );
+    }
+  }
 }
 
 async function withTransaction<T>(callback: (client: PoolClient) => Promise<T>) {
@@ -326,23 +677,48 @@ async function initCms() {
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
+
+        CREATE TABLE IF NOT EXISTS form_submissions (
+          id SERIAL PRIMARY KEY,
+          locale TEXT NOT NULL DEFAULT 'en',
+          source TEXT NOT NULL DEFAULT 'website',
+          form_name TEXT,
+          page TEXT,
+          full_name TEXT NOT NULL,
+          phone TEXT NOT NULL,
+          email TEXT,
+          message TEXT,
+          payload_json JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS pages (
+          id SERIAL PRIMARY KEY,
+          page_key TEXT NOT NULL,
+          locale TEXT NOT NULL DEFAULT 'en',
+          title TEXT NOT NULL,
+          content TEXT NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
       `);
 
       await pool.query(`
         ALTER TABLE sections DROP CONSTRAINT IF EXISTS sections_section_key_key;
         CREATE UNIQUE INDEX IF NOT EXISTS sections_section_key_locale_idx
         ON sections (section_key, locale);
+        CREATE UNIQUE INDEX IF NOT EXISTS pages_page_key_locale_idx
+        ON pages (page_key, locale);
       `);
 
       const existingSite = await pool.query(
         "SELECT locale FROM site_settings WHERE locale = 'en' LIMIT 1"
       );
 
-      if (existingSite.rowCount) {
-        return;
+      if (!existingSite.rowCount) {
+        await seedCms();
       }
 
-      await seedCms();
+      await backfillDefaultPages();
     })();
   }
 
@@ -351,32 +727,6 @@ async function initCms() {
 
 async function seedCms() {
   await withTransaction(async (client) => {
-    type SeedSection = {
-      key: string;
-      name: string;
-      sectionType: string;
-      sortOrder: number;
-      heading?: string;
-      subheading?: string;
-      description?: string;
-      buttonLabel?: string;
-      buttonUrl?: string;
-      imageUrl?: string;
-      settings?: JsonValue;
-      items?: Array<{
-        itemType: string;
-        title?: string;
-        subtitle?: string;
-        description?: string;
-        imageUrl?: string;
-        videoUrl?: string;
-        linkUrl?: string;
-        altText?: string;
-        sortOrder: number;
-        settings?: JsonValue;
-      }>;
-    };
-
     await client.query(
       `
         INSERT INTO locales (code, label, direction, is_default, is_active)
@@ -636,68 +986,12 @@ async function seedCms() {
           description: item.answer,
           sortOrder: index
         }))
-      }
+      },
+      ...getExtendedSectionSeeds()
     ];
 
     for (const section of sections) {
-      await client.query(
-        `
-          INSERT INTO sections (
-            section_key, locale, name, section_type, sort_order, is_active, heading, subheading,
-            description, button_label, button_url, image_url, settings_json
-          ) VALUES ($1, 'en', $2, $3, $4, TRUE, $5, $6, $7, $8, $9, $10, $11::jsonb)
-        `,
-        [
-          section.key,
-          section.name,
-          section.sectionType,
-          section.sortOrder,
-          section.heading || null,
-          section.subheading || null,
-          section.description || null,
-          section.buttonLabel || null,
-          section.buttonUrl || null,
-          section.imageUrl || null,
-          JSON.stringify(section.settings || null)
-        ]
-      );
-
-      for (const item of section.items || []) {
-        const entry = item as {
-          itemType: string;
-          title?: string;
-          subtitle?: string;
-          description?: string;
-          imageUrl?: string;
-          videoUrl?: string;
-          linkUrl?: string;
-          altText?: string;
-          sortOrder: number;
-          settings?: JsonValue;
-        };
-
-        await client.query(
-          `
-            INSERT INTO section_items (
-              section_key, locale, item_type, title, subtitle, description, image_url,
-              video_url, link_url, alt_text, sort_order, is_active, settings_json
-            ) VALUES ($1, 'en', $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE, $11::jsonb)
-          `,
-          [
-            section.key,
-            entry.itemType,
-            entry.title || null,
-            entry.subtitle || null,
-            entry.description || null,
-            entry.imageUrl || null,
-            entry.videoUrl || null,
-            entry.linkUrl || null,
-            entry.altText || null,
-            entry.sortOrder,
-            JSON.stringify(entry.settings || null)
-          ]
-        );
-      }
+      await insertSeedSection(client, "en", section);
     }
 
     const mediaFiles = [
@@ -793,11 +1087,64 @@ async function ensureHeaderSection(locale: string) {
   });
 }
 
+async function ensureExtendedSections(locale: string) {
+  await initCms();
+  const sections = getExtendedSectionSeeds();
+
+  await withTransaction(async (client) => {
+    for (const section of sections) {
+      const sectionResult = await client.query(
+        "SELECT id FROM sections WHERE section_key = $1 AND locale = $2 LIMIT 1",
+        [section.key, locale]
+      );
+
+      if (!sectionResult.rowCount) {
+        await insertSeedSection(client, locale, section);
+        continue;
+      }
+
+      const itemCountResult = await client.query(
+        "SELECT COUNT(*)::int AS count FROM section_items WHERE section_key = $1 AND locale = $2",
+        [section.key, locale]
+      );
+      const itemCount = itemCountResult.rows[0]?.count || 0;
+
+      if (itemCount <= 0 && (section.items?.length || 0) > 0) {
+        for (const item of section.items || []) {
+          await client.query(
+            `
+              INSERT INTO section_items (
+                section_key, locale, item_type, title, subtitle, description, image_url,
+                video_url, link_url, alt_text, sort_order, is_active, settings_json
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE, $12::jsonb)
+            `,
+            [
+              section.key,
+              locale,
+              item.itemType,
+              item.title || null,
+              item.subtitle || null,
+              item.description || null,
+              item.imageUrl || null,
+              item.videoUrl || null,
+              item.linkUrl || null,
+              item.altText || null,
+              item.sortOrder,
+              JSON.stringify(item.settings || null)
+            ]
+          );
+        }
+      }
+    }
+  });
+}
+
 async function ensureLocaleContent(locale: string) {
   await initCms();
 
   if (locale === "en") {
     await ensureHeaderSection(locale);
+    await ensureExtendedSections(locale);
     return;
   }
 
@@ -901,6 +1248,7 @@ async function ensureLocaleContent(locale: string) {
   }
 
   await ensureHeaderSection(locale);
+  await ensureExtendedSections(locale);
 }
 
 export async function getSiteSettings(locale = "en"): Promise<SiteSettings> {
@@ -1096,6 +1444,77 @@ export async function getDashboardOverview(locale = "en") {
   };
 }
 
+export async function getManagedPages(locale = "en"): Promise<ManagedPage[]> {
+  const normalizedLocale = normalizeManagedLocale(locale);
+  await initCms();
+  const result = await pool.query(
+    `
+      SELECT *
+      FROM pages
+      WHERE locale = $1
+      ORDER BY CASE page_key
+        WHEN 'thankyou' THEN 0
+        WHEN 'privacy-policy' THEN 1
+        WHEN 'terms' THEN 2
+        ELSE 99
+      END, id ASC
+    `,
+    [normalizedLocale]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    key: row.page_key as ManagedPageKey,
+    locale: row.locale,
+    title: row.title,
+    content: row.content,
+    updatedAt: row.updated_at?.toISOString?.() || new Date().toISOString()
+  }));
+}
+
+export async function getManagedPageByKey(
+  key: string,
+  locale = "en"
+): Promise<ManagedPage | null> {
+  if (!managedPageKeys.includes(key as ManagedPageKey)) {
+    return null;
+  }
+
+  const normalizedLocale = normalizeManagedLocale(locale);
+  await initCms();
+  const result = await pool.query(
+    `
+      SELECT *
+      FROM pages
+      WHERE page_key = $1 AND locale = $2
+      LIMIT 1
+    `,
+    [key, normalizedLocale]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    const fallback = getManagedPageDefault(key as ManagedPageKey, normalizedLocale);
+    return {
+      id: 0,
+      key: key as ManagedPageKey,
+      locale: normalizedLocale,
+      title: fallback.title,
+      content: fallback.content,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  return {
+    id: row.id,
+    key: row.page_key as ManagedPageKey,
+    locale: row.locale,
+    title: row.title,
+    content: row.content,
+    updatedAt: row.updated_at?.toISOString?.() || new Date().toISOString()
+  };
+}
+
 export async function upsertSiteSettings(data: {
   locale?: string;
   siteName: string;
@@ -1164,6 +1583,27 @@ export async function upsertFooterSettings(data: {
       data.address,
       data.copyrightText
     ]
+  );
+}
+
+export async function upsertManagedPage(data: {
+  key: ManagedPageKey;
+  locale?: string;
+  title: string;
+  content: string;
+}) {
+  const normalizedLocale = normalizeManagedLocale(data.locale);
+  await initCms();
+  await pool.query(
+    `
+      INSERT INTO pages (page_key, locale, title, content, updated_at)
+      VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (page_key, locale) DO UPDATE SET
+        title = EXCLUDED.title,
+        content = EXCLUDED.content,
+        updated_at = NOW()
+    `,
+    [data.key, normalizedLocale, data.title, data.content]
   );
 }
 
@@ -1442,6 +1882,76 @@ export async function deleteMediaAsset(id: number) {
   await pool.query("DELETE FROM media_assets WHERE id = $1", [id]);
 }
 
+export async function createFormSubmission(data: {
+  locale?: string;
+  source: string;
+  formName?: string;
+  page?: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+  message?: string;
+  payload?: Record<string, unknown>;
+}) {
+  await initCms();
+  const result = await pool.query(
+    `
+      INSERT INTO form_submissions (
+        locale, source, form_name, page, full_name, phone, email, message, payload_json
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+      RETURNING id
+    `,
+    [
+      data.locale || "en",
+      data.source,
+      data.formName || null,
+      data.page || null,
+      data.fullName,
+      data.phone,
+      data.email || null,
+      data.message || null,
+      JSON.stringify(data.payload || null)
+    ]
+  );
+
+  return Number(result.rows[0]?.id || 0);
+}
+
+export async function getFormSubmissions(locale?: string): Promise<FormSubmission[]> {
+  await initCms();
+  const result = locale
+    ? await pool.query(
+        `
+          SELECT *
+          FROM form_submissions
+          WHERE locale = $1
+          ORDER BY created_at DESC, id DESC
+        `,
+        [locale]
+      )
+    : await pool.query(
+        `
+          SELECT *
+          FROM form_submissions
+          ORDER BY created_at DESC, id DESC
+        `
+      );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    locale: row.locale,
+    source: row.source,
+    formName: row.form_name || "",
+    page: row.page || "",
+    fullName: row.full_name || "",
+    phone: row.phone || "",
+    email: row.email || "",
+    message: row.message || "",
+    payload: parseJson<Record<string, unknown>>(row.payload_json) || {},
+    createdAt: row.created_at?.toISOString?.() || new Date().toISOString()
+  }));
+}
+
 export async function createAdminUser(data: {
   name: string;
   email: string;
@@ -1525,7 +2035,11 @@ export async function getPublicSiteContent(locale = "en") {
 
   const get = (key: string) => sections.find((section) => section.key === key) || null;
   const header = get("header");
+  const header2 = get("header-2");
+  const footerSection = get("footer");
+  const footerSection2 = get("footer-2");
   const hero = get("hero");
+  const hero2 = get("hero-2");
   const headerNavLinks =
     header?.items
       .filter((item) => item.isActive && item.linkUrl && item.title)
@@ -1542,17 +2056,28 @@ export async function getPublicSiteContent(locale = "en") {
     navLinks:
       headerNavLinks.length > 0
         ? headerNavLinks
-        : ((hero?.settings as { navLinks?: Array<{ href: string; label: string }> })?.navLinks as
+        : (((hero2?.isActive ? hero2 : hero)?.settings as {
+            navLinks?: Array<{ href: string; label: string }>;
+          })?.navLinks as
             | Array<{ href: string; label: string }>
             | undefined) || navLinks,
     header,
+    header2,
+    footerSection,
+    footerSection2,
     hero,
+    hero2,
     whyChoose: get("why-choose"),
     servicesSection: get("services"),
+    treatmentMatrix: get("treatment-matrix"),
     beforeAfter: get("before-after"),
     serviceDetails: get("service-details"),
+    certificatesGallery: get("certificates-gallery"),
+    googleReviews: get("google-reviews"),
+    trustpilotReviews: get("trustpilot-reviews"),
     hotel: get("hotel"),
     clinicGallerySection: get("clinic-gallery"),
+    luckySpin: get("lucky-spin"),
     consultationVirtual: get("consultation-virtual"),
     consultationOnline: get("consultation-online"),
     influencers: get("influencers"),

@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
-import type { FooterSettings } from "@/lib/cms";
+import { FooterLpbm } from "@/components/footer-lpbm";
+import type { FooterSettings, Section } from "@/lib/cms";
 
 const socialIconMap: Record<string, string> = {
   Facebook:
@@ -18,9 +19,19 @@ type SiteFooterProps = {
     href: string;
     label: string;
   }>;
+  footerSection: Section | null;
 };
 
-export function SiteFooter({ footer, navLinks }: SiteFooterProps) {
+export function SiteFooter({ footer, navLinks, footerSection }: SiteFooterProps) {
+  if (footerSection?.key === "footer-2") {
+    return <FooterLpbm footer={footer} footerSection={footerSection} />;
+  }
+
+  const footerSettings = (footerSection?.settings || {}) as Record<string, unknown>;
+  const pageSuffix = footer.locale === "ru" ? "?locale=ru" : "";
+  const privacyHref = `/privacy-policy${pageSuffix}`;
+  const termsHref = `/terms${pageSuffix}`;
+
   return (
     <footer id="contact" className="bg-dental-navy text-white">
       <div className="container-dental py-12">
@@ -93,6 +104,21 @@ export function SiteFooter({ footer, navLinks }: SiteFooterProps) {
                 {link.label}
               </Link>
             ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-white/60">
+            <Link
+              href={privacyHref}
+              className="font-medium transition-colors hover:text-white"
+            >
+              {String(footerSettings.privacy || "Privacy Policy")}
+            </Link>
+            <span>|</span>
+            <Link
+              href={termsHref}
+              className="font-medium transition-colors hover:text-white"
+            >
+              {String(footerSettings.terms || "Terms & Conditions")}
+            </Link>
           </div>
         </div>
       </div>

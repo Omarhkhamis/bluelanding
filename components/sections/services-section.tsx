@@ -1,6 +1,10 @@
+"use client";
+
 import Image from "next/image";
-import { ChevronRight } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Section, SectionItem } from "@/lib/cms";
+import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type ServicesSectionProps = {
   section: Section;
@@ -8,6 +12,10 @@ type ServicesSectionProps = {
 };
 
 export function ServicesSection({ section, whatsappUrl }: ServicesSectionProps) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "start",
+    loop: true
+  });
   const services = section.items;
 
   return (
@@ -17,13 +25,42 @@ export function ServicesSection({ section, whatsappUrl }: ServicesSectionProps) 
           {section.heading}
         </h2>
 
-        <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="services-mobile-slider relative mb-8 px-10">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex -ml-4">
+              {services.map((service) => (
+                <div key={service.id} className="min-w-0 shrink-0 grow-0 basis-full pl-4">
+                  <ServiceCard service={service} whatsappUrl={whatsappUrl} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="absolute left-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-dental-navy transition hover:text-primary"
+            onClick={() => emblaApi?.scrollPrev()}
+            aria-label="Previous services"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-dental-navy transition hover:text-primary"
+            onClick={() => emblaApi?.scrollNext()}
+            aria-label="Next services"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="services-desktop-grid mb-6 grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {services.slice(0, 3).map((service) => (
             <ServiceCard key={service.id} service={service} whatsappUrl={whatsappUrl} />
           ))}
         </div>
 
-        <div className="mx-auto grid max-w-2xl grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="services-desktop-grid mx-auto max-w-2xl grid-cols-1 gap-6 md:grid-cols-2">
           {services.slice(3).map((service) => (
             <ServiceCard key={service.id} service={service} whatsappUrl={whatsappUrl} />
           ))}
@@ -59,6 +96,7 @@ function ServiceCard({ service, whatsappUrl }: ServiceCardProps) {
         <div className="absolute inset-x-0 bottom-0">
           <a
             href={serviceLink}
+            {...getWhatsAppLinkProps(serviceLink)}
             className="block bg-dental-navy px-4 py-3 text-center text-lg font-bold text-white transition-colors hover:bg-primary"
           >
             {service.title}
@@ -79,6 +117,7 @@ function ServiceCard({ service, whatsappUrl }: ServiceCardProps) {
               <ChevronRight className="mt-0.5 h-5 w-5 shrink-0 text-gray-400" />
               <a
                 href={serviceLink}
+                {...getWhatsAppLinkProps(serviceLink)}
                 className="text-sm text-dental-navy underline hover:text-primary"
               >
                 {item}
@@ -88,6 +127,7 @@ function ServiceCard({ service, whatsappUrl }: ServiceCardProps) {
         </ul>
         <a
           href={serviceLink}
+          {...getWhatsAppLinkProps(serviceLink)}
           className="inline-flex h-10 items-center justify-center rounded-md bg-[#1e1e3f] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1e1e3f]/90"
         >
           {buttonLabel}

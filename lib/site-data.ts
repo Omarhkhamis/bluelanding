@@ -216,3 +216,187 @@ export const socialLinks = [
   { href: "https://www.instagram.com/cevredent/", label: "Instagram" },
   { href: "https://www.tiktok.com/@cevredent", label: "TikTok" }
 ];
+
+export const lpbmHeaderDefaults = {
+  variant: "default",
+  ctaLabel: "Book Consultation",
+  callLabel: "Call Us"
+};
+
+export const lpbmFooterDefaults = {
+  variant: "default",
+  description:
+    "Premium dental journeys with treatment planning, hotel coordination, and personal support from arrival to your final check-up.",
+  badge: "International Patient Support",
+  note:
+    "Every treatment plan is confirmed after clinical evaluation and diagnostics by the dentist.",
+  navTreatments: "Treatments",
+  navPopularTreatments: "Popular Treatments",
+  navBeforeAfter: "Before & After",
+  navTestimonials: "Testimonials",
+  navFaqs: "FAQs",
+  navHealthTourism: "Health Tourism",
+  phoneLabel: "Phone",
+  whatsappLabel: "WhatsApp",
+  emailLabel: "Email",
+  addressLabel: "Address",
+  privacy: "Privacy Policy",
+  terms: "Terms & Conditions"
+};
+
+export const lpbmHeroDefaults = {
+  variant: "default",
+  kicker: "Istanbul • Türkiye",
+  titleLine1: "Dental Implants in Türkiye",
+  titleLine2: "with BM TURKIYE",
+  subtitle:
+    "Advanced implantology, immediate-load options, and long-lasting restorations crafted in the heart of Istanbul.",
+  whatsappCta: "WhatsApp Implant Plan",
+  videoUrl: "",
+  formTitle: "Start your implant assessment",
+  formDescription:
+    "Tell us about your missing teeth or implant needs. Our coordinators will contact you shortly.",
+  formPrivacyNote: "Your details stay private.",
+  formSubmitText: "Submit Request"
+};
+
+export const treatmentMatrixDefaults = {
+  kicker: "Treatment Matrix",
+  title: "Implant Options at a Glance",
+  description:
+    "Compare our most requested implant solutions, ideal indications, timelines in Turkiye, and expected results. Your final plan is confirmed after diagnostics.",
+  columns: [
+    "Technique",
+    "Type",
+    "Ideal Candidates",
+    "Advantages",
+    "Disadvantages",
+    "Time in Turkiye",
+    "Results"
+  ],
+  rows: [
+    [
+      "Single Implant",
+      "Titanium post + crown",
+      "1-3 missing teeth",
+      "Natural feel, independent support",
+      "Minor surgery, healing time",
+      "5-7 days + healing",
+      "Long-term with proper care"
+    ],
+    [
+      "All-on-4 / All-on-6",
+      "Full-arch prosthesis on implants",
+      "Fully edentulous or failing dentition",
+      "Fixed, stable, full set of teeth",
+      "Requires healing period",
+      "7-10 days",
+      "Full-arch smile with high stability"
+    ],
+    [
+      "Zirconium Implant Crowns",
+      "Ceramic crown on implant",
+      "Aesthetic zones, cosmetic focus",
+      "Highly aesthetic, metal-free",
+      "Higher cost",
+      "5-7 days",
+      "Natural look, strong bite"
+    ],
+    [
+      "Bone Grafting",
+      "Graft material + healing",
+      "Patients with jawbone loss",
+      "Enables implants in difficult cases",
+      "Healing time required",
+      "1-2 days (plus healing)",
+      "Strong foundation for implants"
+    ]
+  ]
+};
+
+export const certificatesGalleryDefaults = {
+  kicker: "Certificates",
+  title: "Certificates Gallery",
+  description:
+    "Official certificates and recognitions that reflect our quality standards.",
+  items: [
+    { image: "/uploads/bm/ba2.jpg", alt: "Certificate 1" },
+    { image: "/uploads/bm/ba3.jpg", alt: "Certificate 2" },
+    { image: "/uploads/bm/ba4.jpg", alt: "Certificate 3" },
+    { image: "/uploads/bm/ba6.jpg", alt: "Certificate 4" }
+  ]
+};
+
+export const googleReviewsDefaults = {
+  kicker: "Google Reviews",
+  title: "Real Patient Stories, Real Reviews",
+  description:
+    "A glimpse of what international patients say about their experience at BM TURKIYE.",
+  rating: "4.9",
+  ratingCountLabel: "380+ Reviews",
+  ctaText: "Free Consultation",
+  items: [
+    {
+      initials: "MM",
+      name: "Matthew",
+      text: "The entire implant process was seamless from the first WhatsApp message to the final check-up. The team explained every step clearly and my new implant bridge looks incredibly natural.",
+      count: "57 Reviews"
+    },
+    {
+      initials: "SS",
+      name: "Sophie",
+      text: "Super professional team and a beautiful clinic. I felt safe, informed, and the results exceeded my expectations.",
+      count: "12 Reviews"
+    },
+    {
+      initials: "HH",
+      name: "Helen",
+      text: "Loved the planning and communication. Everything ran on time, and the aftercare instructions were very clear.",
+      count: "4 Reviews"
+    },
+    {
+      initials: "DD",
+      name: "Daniel",
+      text: "The process was very transparent. I knew exactly what would be done and how long it would take. The result looks natural and feels great.",
+      count: "23 Reviews"
+    }
+  ]
+};
+
+export const trustpilotReviewsDefaults = {
+  kicker: "Trustpilot Reviews",
+  title: "Real Patient Stories, Real Reviews",
+  description:
+    "A glimpse of what international patients say about their experience at BM TURKIYE.",
+  rating: "4.9",
+  ratingCountLabel: "380+ Reviews",
+  ctaText: "Free Consultation",
+  items: googleReviewsDefaults.items.map((item) => ({ ...item }))
+};
+
+export const luckySpinDefaults = {
+  kicker: "Lucky Spin",
+  tagline: "Flip to Win",
+  title: "Try Your Luck",
+  description: "Try your luck to get a discount coupon.",
+  spinLabel: "Spin Now",
+  spinLoadingLabel: "Spinning...",
+  resultLabel: "You get",
+  resultPlaceholder: "Spin to reveal your prize.",
+  backgroundImage: "/uploads/bm/spin-bg-bottom.png",
+  backgroundAlt: "Lucky spin background",
+  prizes: [
+    "20% Discount",
+    "$75 Discount",
+    "10% Discount",
+    "50% Flight Ticket",
+    "$50 Discount",
+    "$100 Discount",
+    "15% Discount",
+    "$150 Discount"
+  ],
+  formTitle: "Get your prize",
+  formDescription: "Enter your details to claim your offer.",
+  formSubmitText: "Submit Request",
+  formPrivacyNote: "Your details stay private."
+};

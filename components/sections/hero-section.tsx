@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { ChevronDown } from "lucide-react";
+import { HeroLpbm } from "@/components/hero-lpbm";
 import type { Section } from "@/lib/cms";
+import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type HeroSectionProps = {
   section: Section;
@@ -8,6 +10,10 @@ type HeroSectionProps = {
 };
 
 export function HeroSection({ section, whatsappUrl }: HeroSectionProps) {
+  if (section.key === "hero-2") {
+    return <HeroLpbm section={section} whatsappUrl={whatsappUrl} />;
+  }
+
   const backgroundImage =
     section.imageUrl || section.items.find((item) => item.itemType === "image")?.imageUrl || "";
   const badges = section.items.filter((item) => item.itemType === "badge");
@@ -38,6 +44,7 @@ export function HeroSection({ section, whatsappUrl }: HeroSectionProps) {
           </p>
           <a
             href={whatsappUrl}
+            {...getWhatsAppLinkProps(whatsappUrl)}
             className="inline-flex w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-dental transition-all duration-300 hover:shadow-dental-lg md:w-auto md:max-w-none md:px-8 md:py-4 md:text-base"
           >
             Get the Best Dental Solution

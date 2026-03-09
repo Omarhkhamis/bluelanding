@@ -29,7 +29,11 @@ export function FaqSection({ section, whatsappUrl }: FaqSectionProps) {
               questions you may have.
             </p>
 
-            <QuoteForm className="space-y-4" whatsappUrl={whatsappUrl} />
+            <QuoteForm
+              className="space-y-4"
+              formName="FAQ Form"
+              whatsappUrl={whatsappUrl}
+            />
           </div>
 
           <div className="space-y-4">

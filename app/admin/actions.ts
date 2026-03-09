@@ -10,7 +10,9 @@ import {
   deleteAdminUser,
   deleteMediaAsset,
   deleteSectionItem,
+  getManagedPagePath,
   getSectionByKey,
+  managedPageKeys,
   reorderSections,
   replaceSocialLinks,
   supportedDashboardLocales,
@@ -18,6 +20,7 @@ import {
   updateCustomCode,
   updateSection,
   upsertFooterSettings,
+  upsertManagedPage,
   upsertSectionItem,
   upsertSeoSettings,
   upsertSiteSettings
@@ -130,6 +133,27 @@ export async function saveSeoAction(formData: FormData) {
   redirectWithStatus(returnPath, locale, "saved");
 }
 
+export async function savePageAction(formData: FormData) {
+  const locale = getLocale(formData);
+  const returnPath = getReturnPath(formData, "/admin/pages");
+  const key = String(formData.get("pageKey") || "");
+
+  if (!managedPageKeys.includes(key as (typeof managedPageKeys)[number])) {
+    redirectWithStatus(returnPath, locale, "error");
+  }
+
+  await upsertManagedPage({
+    key: key as (typeof managedPageKeys)[number],
+    locale,
+    title: String(formData.get("title") || "").trim(),
+    content: String(formData.get("content") || "").trim()
+  });
+
+  revalidateAdminAndSite(returnPath);
+  revalidatePath(getManagedPagePath(key as (typeof managedPageKeys)[number]));
+  redirectWithStatus(returnPath, locale, "saved");
+}
+
 export async function saveCustomCodesAction(formData: FormData) {
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/custom-codes");
@@ -204,6 +228,11 @@ export async function saveSectionAction(formData: FormData) {
     existingSection?.settings && typeof existingSection.settings === "object"
       ? { ...existingSection.settings }
       : {};
+  const readLines = (name: string) =>
+    String(formData.get(name) || "")
+      .split("\n")
+      .map((value) => value.trim())
+      .filter(Boolean);
 
   if (key === "hotel") {
     normalizedSectionSettings.hotelName = String(formData.get("hotelName") || "").trim();
@@ -211,6 +240,113 @@ export async function saveSectionAction(formData: FormData) {
       5,
       Math.max(1, Number(formData.get("hotelStars") || 5) || 5)
     );
+  }
+
+  if (key === "header" || key === "header-2") {
+    normalizedSectionSettings.variant = key === "header-2" ? "lpbm" : "default";
+    normalizedSectionSettings.ctaLabel = String(formData.get("headerCtaLabel") || "").trim();
+    normalizedSectionSettings.callLabel = String(formData.get("headerCallLabel") || "").trim();
+  }
+
+  if (key === "hero" || key === "hero-2") {
+    normalizedSectionSettings.variant = key === "hero-2" ? "lpbm" : "default";
+    normalizedSectionSettings.videoUrl = String(formData.get("heroVideoUrl") || "").trim();
+    normalizedSectionSettings.kicker = String(formData.get("heroKicker") || "").trim();
+    normalizedSectionSettings.titleLine1 = String(formData.get("heroTitleLine1") || "").trim();
+    normalizedSectionSettings.titleLine2 = String(formData.get("heroTitleLine2") || "").trim();
+    normalizedSectionSettings.whatsappCta = String(formData.get("heroWhatsappCta") || "").trim();
+    normalizedSectionSettings.formTitle = String(formData.get("heroFormTitle") || "").trim();
+    normalizedSectionSettings.formDescription = String(
+      formData.get("heroFormDescription") || ""
+    ).trim();
+    normalizedSectionSettings.formSubmitText = String(
+      formData.get("heroFormSubmitText") || ""
+    ).trim();
+    normalizedSectionSettings.formPrivacyNote = String(
+      formData.get("heroFormPrivacyNote") || ""
+    ).trim();
+    normalizedSectionSettings.lpbmSubtitle = String(
+      formData.get("heroLpbmSubtitle") || ""
+    ).trim();
+  }
+
+  if (key === "footer" || key === "footer-2") {
+    normalizedSectionSettings.variant = key === "footer-2" ? "lpbm" : "default";
+    normalizedSectionSettings.description = String(formData.get("footerDescription") || "").trim();
+    normalizedSectionSettings.badge = String(formData.get("footerBadge") || "").trim();
+    normalizedSectionSettings.note = String(formData.get("footerNote") || "").trim();
+    normalizedSectionSettings.navTreatments = String(
+      formData.get("footerNavTreatments") || ""
+    ).trim();
+    normalizedSectionSettings.navBeforeAfter = String(
+      formData.get("footerNavBeforeAfter") || ""
+    ).trim();
+    normalizedSectionSettings.navTestimonials = String(
+      formData.get("footerNavTestimonials") || ""
+    ).trim();
+    normalizedSectionSettings.navFaqs = String(formData.get("footerNavFaqs") || "").trim();
+    normalizedSectionSettings.navHealthTourism = String(
+      formData.get("footerNavHealthTourism") || ""
+    ).trim();
+    normalizedSectionSettings.phoneLabel = String(formData.get("footerPhoneLabel") || "").trim();
+    normalizedSectionSettings.emailLabel = String(formData.get("footerEmailLabel") || "").trim();
+    normalizedSectionSettings.addressLabel = String(
+      formData.get("footerAddressLabel") || ""
+    ).trim();
+    normalizedSectionSettings.privacy = String(formData.get("footerPrivacy") || "").trim();
+    normalizedSectionSettings.terms = String(formData.get("footerTerms") || "").trim();
+  }
+
+  if (key === "treatment-matrix") {
+    const matrixColumnCount = Number(formData.get("matrixColumnCount") || 0);
+    const matrixRowCount = Number(formData.get("matrixRowCount") || 0);
+    const columns: string[] = [];
+    const rows: Array<{ values: string[] }> = [];
+
+    for (let columnIndex = 0; columnIndex < matrixColumnCount; columnIndex += 1) {
+      columns.push(String(formData.get(`matrixColumns.${columnIndex}`) || "").trim());
+    }
+
+    for (let rowIndex = 0; rowIndex < matrixRowCount; rowIndex += 1) {
+      const values: string[] = [];
+
+      for (let columnIndex = 0; columnIndex < matrixColumnCount; columnIndex += 1) {
+        values.push(String(formData.get(`matrixRows.${rowIndex}.${columnIndex}`) || "").trim());
+      }
+
+      rows.push({ values });
+    }
+
+    normalizedSectionSettings.columns = columns;
+    normalizedSectionSettings.rows = rows;
+  }
+
+  if (key === "google-reviews" || key === "trustpilot-reviews") {
+    normalizedSectionSettings.provider = key === "google-reviews" ? "google" : "trustpilot";
+    normalizedSectionSettings.rating = String(formData.get("reviewsRating") || "").trim();
+    normalizedSectionSettings.ratingCountLabel = String(
+      formData.get("reviewsRatingCountLabel") || ""
+    ).trim();
+  }
+
+  if (key === "lucky-spin") {
+    normalizedSectionSettings.tagline = String(formData.get("luckySpinTagline") || "").trim();
+    normalizedSectionSettings.resultLabel = String(
+      formData.get("luckySpinResultLabel") || ""
+    ).trim();
+    normalizedSectionSettings.prizes = readLines("luckySpinPrizes");
+    normalizedSectionSettings.formTitle = String(
+      formData.get("luckySpinFormTitle") || ""
+    ).trim();
+    normalizedSectionSettings.formDescription = String(
+      formData.get("luckySpinFormDescription") || ""
+    ).trim();
+    normalizedSectionSettings.formSubmitText = String(
+      formData.get("luckySpinFormSubmitText") || ""
+    ).trim();
+    normalizedSectionSettings.formPrivacyNote = String(
+      formData.get("luckySpinFormPrivacyNote") || ""
+    ).trim();
   }
 
   await updateSection({

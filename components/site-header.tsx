@@ -4,6 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import { HeaderLpbm } from "@/components/header-lpbm";
+import type { FooterSettings, Section } from "@/lib/cms";
 type SiteHeaderProps = {
   logoUrl: string;
   siteName: string;
@@ -11,9 +13,31 @@ type SiteHeaderProps = {
     href: string;
     label: string;
   }>;
+  footer: FooterSettings;
+  whatsappUrl: string;
+  section: Section | null;
 };
 
-export function SiteHeader({ logoUrl, siteName, navLinks }: SiteHeaderProps) {
+export function SiteHeader({
+  logoUrl,
+  siteName,
+  navLinks,
+  footer,
+  whatsappUrl,
+  section
+}: SiteHeaderProps) {
+  if (section?.key === "header-2") {
+    return (
+      <HeaderLpbm
+        logoUrl={logoUrl}
+        siteName={siteName}
+        footer={footer}
+        whatsappUrl={whatsappUrl}
+        section={section}
+      />
+    );
+  }
+
   const [isOpen, setIsOpen] = useState(false);
 
   return (

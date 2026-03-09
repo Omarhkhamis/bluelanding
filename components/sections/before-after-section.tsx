@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Section } from "@/lib/cms";
+import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type BeforeAfterSectionProps = {
   section: Section;
@@ -19,6 +20,7 @@ export function BeforeAfterSection({ section, whatsappUrl }: BeforeAfterSectionP
     }
   });
   const slides = section.items.filter((item) => item.imageUrl.trim().length > 0);
+  const ctaUrl = section.buttonUrl || whatsappUrl;
 
   return (
     <section id="before-after" className="section-padding bg-background">
@@ -51,25 +53,26 @@ export function BeforeAfterSection({ section, whatsappUrl }: BeforeAfterSectionP
 
           <button
             type="button"
-            className="absolute -left-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white text-dental-navy shadow-lg hover:bg-gray-50 md:-left-12"
+            className="absolute -left-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-dental-navy transition hover:text-primary md:-left-12"
             onClick={() => emblaApi?.scrollPrev()}
             aria-label="Previous slide"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             type="button"
-            className="absolute -right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white text-dental-navy shadow-lg hover:bg-gray-50 md:-right-12"
+            className="absolute -right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-dental-navy transition hover:text-primary md:-right-12"
             onClick={() => emblaApi?.scrollNext()}
             aria-label="Next slide"
           >
-            <ArrowRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
 
         <div className="text-center">
           <a
-            href={section.buttonUrl || whatsappUrl}
+            href={ctaUrl}
+            {...getWhatsAppLinkProps(ctaUrl)}
             className="inline-flex h-11 items-center justify-center rounded-md bg-dental-navy px-8 text-sm font-medium text-white transition-colors hover:bg-dental-navy/90"
           >
             {section.buttonLabel || "Get the Best Dental Treatment"}

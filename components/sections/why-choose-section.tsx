@@ -43,6 +43,7 @@ export function WhyChooseSection({ section, whatsappUrl }: WhyChooseSectionProps
 
             <QuoteForm
               className="space-y-4"
+              formName="Why Choose Form"
               submitLabel={section.buttonLabel}
               whatsappUrl={whatsappUrl}
             />

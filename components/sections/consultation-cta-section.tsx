@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Laptop, MessageSquare, User } from "lucide-react";
 import type { Section } from "@/lib/cms";
+import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type ConsultationCtaSectionProps = {
   section: Section;
@@ -32,6 +33,7 @@ export function ConsultationCtaSection({
             <div className="pt-4">
               <a
                 href={ctaUrl}
+                {...getWhatsAppLinkProps(ctaUrl)}
                 className="inline-flex min-w-[160px] items-center justify-center rounded-md bg-[#2D2D2D] px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1a1a1a]"
               >
                 {section.buttonLabel}
