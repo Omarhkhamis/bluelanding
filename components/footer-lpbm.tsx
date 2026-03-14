@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
+import { getFooterNavItems } from "@/lib/footer-nav";
+import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 import type { FooterSettings, Section } from "@/lib/cms";
 
 const socialIconMap: Record<string, string> = {
@@ -15,25 +17,21 @@ const socialIconMap: Record<string, string> = {
 type FooterLpbmProps = {
   footer: FooterSettings;
   footerSection: Section | null;
+  whatsappUrl: string;
 };
 
-export function FooterLpbm({ footer, footerSection }: FooterLpbmProps) {
+export function FooterLpbm({ footer, footerSection, whatsappUrl }: FooterLpbmProps) {
   const settings = (footerSection?.settings || {}) as Record<string, unknown>;
   const socialLinks = footer.socialLinks.filter((link) => link.url && link.url.trim());
   const pageSuffix = footer.locale === "ru" ? "?locale=ru" : "";
-  const links = [
-    { href: "#services", label: String(settings.navTreatments || "Treatments") },
-    { href: "#before-after", label: String(settings.navBeforeAfter || "Before & After") },
-    { href: "#google-reviews", label: String(settings.navTestimonials || "Testimonials") },
-    { href: "#faq", label: String(settings.navFaqs || "FAQs") },
-    { href: "#why", label: String(settings.navHealthTourism || "Health Tourism") }
-  ];
+  const footerLogoUrl = footerSection?.imageUrl || footer.logoUrl;
+  const links = getFooterNavItems(settings);
 
   return (
     <footer id="contact" className="lpbm-footer">
       <div className="container-dental lpbm-footer__inner">
         <div className="lpbm-footer__brand">
-          <img src={footer.logoUrl} alt="Footer Logo" className="lpbm-footer__logo" />
+          <img src={footerLogoUrl} alt="Footer Logo" className="lpbm-footer__logo" />
           <p className="lpbm-footer__description">
             {String(
               settings.description ||
@@ -63,15 +61,19 @@ export function FooterLpbm({ footer, footerSection }: FooterLpbmProps) {
                 </a>
               );
             })}
-            <span className="lpbm-footer__badge">
+            <a
+              href={whatsappUrl}
+              {...getWhatsAppLinkProps(whatsappUrl)}
+              className="lpbm-footer__badge"
+            >
               {String(settings.badge || "International Patient Support")}
-            </span>
+            </a>
           </div>
         </div>
 
         <div className="lpbm-footer__links">
-          {links.map((link) => (
-            <a key={link.href} href={link.href} className="lpbm-footer__link">
+          {links.map((link, index) => (
+            <a key={`${link.href}-${index}`} href={link.href || "#"} className="lpbm-footer__link">
               {link.label}
             </a>
           ))}
@@ -120,7 +122,7 @@ export function FooterLpbm({ footer, footerSection }: FooterLpbmProps) {
           </Link>
           <span>|</span>
           <Link href={`/terms${pageSuffix}`}>
-            {String(settings.terms || "Terms & Conditions")}
+            {String(settings.terms || "Terms")}
           </Link>
         </div>
       </div>

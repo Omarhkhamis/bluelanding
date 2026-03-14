@@ -20,11 +20,12 @@ type SiteFooterProps = {
     label: string;
   }>;
   footerSection: Section | null;
+  whatsappUrl: string;
 };
 
-export function SiteFooter({ footer, navLinks, footerSection }: SiteFooterProps) {
+export function SiteFooter({ footer, navLinks, footerSection, whatsappUrl }: SiteFooterProps) {
   if (footerSection?.key === "footer-2") {
-    return <FooterLpbm footer={footer} footerSection={footerSection} />;
+    return <FooterLpbm footer={footer} footerSection={footerSection} whatsappUrl={whatsappUrl} />;
   }
 
   const footerSettings = (footerSection?.settings || {}) as Record<string, unknown>;
@@ -90,11 +91,8 @@ export function SiteFooter({ footer, navLinks, footerSection }: SiteFooterProps)
       </div>
 
       <div className="border-t border-white/10 py-4">
-        <div className="container-dental text-center">
-          <p className="text-sm text-white/60">
-            {footer.copyrightText}
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-6">
+        <div className="container-dental">
+          <div className="mb-6 flex flex-wrap justify-center gap-6">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -105,20 +103,25 @@ export function SiteFooter({ footer, navLinks, footerSection }: SiteFooterProps)
               </Link>
             ))}
           </div>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-white/60">
-            <Link
-              href={privacyHref}
-              className="font-medium transition-colors hover:text-white"
-            >
-              {String(footerSettings.privacy || "Privacy Policy")}
-            </Link>
-            <span>|</span>
-            <Link
-              href={termsHref}
-              className="font-medium transition-colors hover:text-white"
-            >
-              {String(footerSettings.terms || "Terms & Conditions")}
-            </Link>
+
+          <div className="flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
+            <p className="text-sm text-white/60">{footer.copyrightText}</p>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-white/60 md:justify-end">
+              <Link
+                href={privacyHref}
+                className="font-medium transition-colors hover:text-white"
+              >
+                {String(footerSettings.privacy || "Privacy Policy")}
+              </Link>
+              <span>|</span>
+              <Link
+                href={termsHref}
+                className="font-medium transition-colors hover:text-white"
+              >
+                {String(footerSettings.terms || "Terms")}
+              </Link>
+            </div>
           </div>
         </div>
       </div>

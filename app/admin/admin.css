@@ -240,6 +240,12 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.admin-data-filter-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .admin-field {
   display: grid;
   gap: 0.45rem;
@@ -317,6 +323,10 @@
   align-items: center;
 }
 
+.admin-actions-end {
+  justify-content: flex-end;
+}
+
 .admin-button,
 .admin-button-muted,
 .admin-button-danger {
@@ -346,6 +356,13 @@
   color: #991b1b;
   background: #fff5f5;
   border-color: #fecaca;
+}
+
+.admin-button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .admin-banner,
@@ -664,6 +681,7 @@
   .admin-grid,
   .admin-stats,
   .admin-form-grid,
+  .admin-data-filter-grid,
   .admin-media-grid {
     grid-template-columns: 1fr;
   }

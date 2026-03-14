@@ -219,6 +219,22 @@ export function AdminShell({ currentUser, sections, children }: AdminShellProps)
           </details>
 
           <details className="admin-nav-group" open>
+            <summary>Data - Leads</summary>
+            <div className="admin-nav-list">
+              <NavLink
+                href={buildHref("/admin/form-data", locale)}
+                isActive={pathname === "/admin/form-data"}
+                label="Form Data"
+              />
+              <NavLink
+                href={buildHref("/admin/spin-data", locale)}
+                isActive={pathname === "/admin/spin-data"}
+                label="Spin Data"
+              />
+            </div>
+          </details>
+
+          <details className="admin-nav-group" open>
             <summary>Settings</summary>
             <div className="admin-nav-list">
               <NavLink
@@ -250,11 +266,6 @@ export function AdminShell({ currentUser, sections, children }: AdminShellProps)
                 href={buildHref("/admin/media", locale)}
                 isActive={pathname === "/admin/media"}
                 label="Media"
-              />
-              <NavLink
-                href={buildHref("/admin/form-data", locale)}
-                isActive={pathname === "/admin/form-data"}
-                label="Form Data"
               />
               <NavLink
                 href={buildHref("/admin/pages", locale)}

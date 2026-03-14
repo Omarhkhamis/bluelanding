@@ -1,3 +1,5 @@
+import { defaultFooterNavItems } from "@/lib/footer-nav";
+
 export const whatsappUrl =
   "https://api.whatsapp.com/send?phone=905518622525&text=What%20are%20the%20options%20and%20pricing%20for%20dental%20treatment";
 
@@ -251,18 +253,24 @@ export const lpbmFooterDefaults = {
   badge: "International Patient Support",
   note:
     "Every treatment plan is confirmed after clinical evaluation and diagnostics by the dentist.",
+  navItems: defaultFooterNavItems,
   navTreatments: "Treatments",
+  navTreatmentsHref: "#services",
   navPopularTreatments: "Popular Treatments",
   navBeforeAfter: "Before & After",
+  navBeforeAfterHref: "#before-after",
   navTestimonials: "Testimonials",
+  navTestimonialsHref: "#google-reviews",
   navFaqs: "FAQs",
+  navFaqsHref: "#faq",
   navHealthTourism: "Health Tourism",
+  navHealthTourismHref: "#why",
   phoneLabel: "Phone",
   whatsappLabel: "WhatsApp",
   emailLabel: "Email",
   addressLabel: "Address",
   privacy: "Privacy Policy",
-  terms: "Terms & Conditions"
+  terms: "Terms"
 };
 
 export const lpbmHeroDefaults = {

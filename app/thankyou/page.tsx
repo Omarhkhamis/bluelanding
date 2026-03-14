@@ -82,6 +82,7 @@ export default async function ThankYouPage({
         footer={content.footer}
         navLinks={content.navLinks}
         footerSection={activeFooter}
+        whatsappUrl={content.site.whatsappUrl}
       />
       <WhatsAppFloat href={content.site.whatsappUrl} />
     </div>

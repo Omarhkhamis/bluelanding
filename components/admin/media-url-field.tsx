@@ -16,13 +16,15 @@ type MediaUrlFieldProps = {
   label: string;
   defaultValue?: string;
   placeholder?: string;
+  mediaType?: "image" | "video" | "all";
 };
 
 export function MediaUrlField({
   name,
   label,
   defaultValue = "",
-  placeholder
+  placeholder,
+  mediaType = "image"
 }: MediaUrlFieldProps) {
   const [value, setValue] = useState(defaultValue);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
@@ -31,6 +33,22 @@ export function MediaUrlField({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const inputId = useId();
+  const isVideoField = mediaType === "video";
+  const acceptedMimeTypes =
+    mediaType === "video" ? "video/*" : mediaType === "all" ? "image/*,video/*" : "image/*";
+  const mediaLabel =
+    mediaType === "video" ? "video" : mediaType === "all" ? "media" : "image";
+  const filteredAssets = assets.filter((asset) => {
+    if (mediaType === "video") {
+      return asset.mimeType.startsWith("video/");
+    }
+
+    if (mediaType === "all") {
+      return asset.mimeType.startsWith("image/") || asset.mimeType.startsWith("video/");
+    }
+
+    return asset.mimeType.startsWith("image/");
+  });
 
   const loadAssets = async () => {
     setIsLoadingAssets(true);
@@ -63,7 +81,7 @@ export function MediaUrlField({
           className="admin-tool-button"
           onClick={() => fileInputRef.current?.click()}
           aria-label={`Upload ${label}`}
-          title="Upload image"
+          title={`Upload ${mediaLabel}`}
         >
           <Upload className="h-4 w-4" />
         </button>
@@ -85,7 +103,7 @@ export function MediaUrlField({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={acceptedMimeTypes}
         className="admin-hidden-file"
         onChange={async (event) => {
           const file = event.target.files?.[0];
@@ -115,7 +133,7 @@ export function MediaUrlField({
         }}
       />
 
-      {isUploading ? <div className="admin-muted">Uploading image...</div> : null}
+      {isUploading ? <div className="admin-muted">Uploading {mediaLabel}...</div> : null}
 
       {isLibraryOpen ? (
         <div
@@ -129,7 +147,7 @@ export function MediaUrlField({
             <div className="admin-modal-header">
               <div>
                 <div className="admin-eyebrow">Media library</div>
-                <h2>Choose image</h2>
+                <h2>Choose {mediaLabel}</h2>
               </div>
               <button
                 type="button"
@@ -143,12 +161,10 @@ export function MediaUrlField({
 
             <div className="admin-media-modal-body">
               {isLoadingAssets ? (
-                <div className="admin-muted">Loading images...</div>
+                <div className="admin-muted">Loading {mediaLabel}s...</div>
               ) : (
                 <div className="admin-media-grid">
-                  {assets
-                    .filter((asset) => asset.mimeType.startsWith("image/"))
-                    .map((asset) => (
+                  {filteredAssets.map((asset) => (
                       <button
                         key={asset.id}
                         type="button"
@@ -158,11 +174,21 @@ export function MediaUrlField({
                           setIsLibraryOpen(false);
                         }}
                       >
-                        <img
-                          src={asset.url}
-                          alt={asset.altText || asset.originalName}
-                          className="admin-media-preview"
-                        />
+                        {isVideoField || asset.mimeType.startsWith("video/") ? (
+                          <video
+                            src={asset.url}
+                            className="admin-media-preview"
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img
+                            src={asset.url}
+                            alt={asset.altText || asset.originalName}
+                            className="admin-media-preview"
+                          />
+                        )}
                         <span className="admin-media-choice-name">{asset.originalName}</span>
                         <span className="admin-media-choice-url">{asset.url}</span>
                       </button>

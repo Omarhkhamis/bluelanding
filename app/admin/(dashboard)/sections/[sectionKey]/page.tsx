@@ -4,12 +4,14 @@ import {
   deleteSectionItemAction,
   saveSectionAction
 } from "@/app/admin/actions";
+import { FooterNavEditor } from "@/components/admin/footer-nav-editor";
 import { ImplantMatrixEditor } from "@/components/admin/implant-matrix-editor";
 import { IconPickerField } from "@/components/admin/icon-picker-field";
 import { MediaUrlField } from "@/components/admin/media-url-field";
 import { StatusNotice } from "@/components/admin/status-notice";
 import { getSectionItemIconSettings } from "@/lib/admin-icons";
 import { getSectionByKey } from "@/lib/cms";
+import { getFooterNavItems, normalizeFooterNavItems } from "@/lib/footer-nav";
 
 export default async function AdminSectionEditorPage({
   params,
@@ -77,6 +79,9 @@ export default async function AdminSectionEditorPage({
     section.settings && typeof section.settings === "object" ? section.settings : {};
   const footerSettings =
     section.settings && typeof section.settings === "object" ? section.settings : {};
+  const footerNavItems = Array.isArray(footerSettings.navItems)
+    ? normalizeFooterNavItems(footerSettings.navItems)
+    : getFooterNavItems(footerSettings);
   const treatmentMatrixSettings =
     section.settings && typeof section.settings === "object" ? section.settings : {};
   const luckySpinSettings =
@@ -274,15 +279,12 @@ export default async function AdminSectionEditorPage({
                       className="admin-input"
                     />
                   </div>
-                  <div className="admin-field">
-                    <label htmlFor="heroVideoUrl">Video URL</label>
-                    <input
-                      id="heroVideoUrl"
-                      name="heroVideoUrl"
-                      defaultValue={String(heroSettings.videoUrl || "")}
-                      className="admin-input"
-                    />
-                  </div>
+                  <MediaUrlField
+                    name="heroVideoUrl"
+                    label="Background video URL"
+                    defaultValue={String(heroSettings.videoUrl || "")}
+                    mediaType="video"
+                  />
                   <div className="admin-field">
                     <label htmlFor="heroKicker">Kicker</label>
                     <input
@@ -302,6 +304,10 @@ export default async function AdminSectionEditorPage({
                     />
                   </div>
                 </div>
+
+                <p className="admin-help">
+                  If both background image and background video are set, Hero 2 shows the video first.
+                </p>
 
                 <div className="admin-form-grid">
                   <div className="admin-field">
@@ -481,7 +487,9 @@ export default async function AdminSectionEditorPage({
             <input type="hidden" name="description" value={section.description} />
             <input type="hidden" name="buttonLabel" value={section.buttonLabel} />
             <input type="hidden" name="buttonUrl" value={section.buttonUrl} />
-            <input type="hidden" name="imageUrl" value={section.imageUrl} />
+            {isFooter2Section ? null : (
+              <input type="hidden" name="imageUrl" value={section.imageUrl} />
+            )}
 
             <input
               type="hidden"
@@ -492,6 +500,11 @@ export default async function AdminSectionEditorPage({
             {isFooter2Section ? (
               <>
                 <div className="admin-form-grid">
+                  <MediaUrlField
+                    name="imageUrl"
+                    label="Footer image URL"
+                    defaultValue={section.imageUrl}
+                  />
                   <div className="admin-field">
                     <label htmlFor="footerBadge">Badge</label>
                     <input
@@ -542,7 +555,7 @@ export default async function AdminSectionEditorPage({
                     <input
                       id="footerTerms"
                       name="footerTerms"
-                      defaultValue={String(footerSettings.terms || "Terms & Conditions")}
+                      defaultValue={String(footerSettings.terms || "Terms")}
                       className="admin-input"
                     />
                   </div>
@@ -568,53 +581,7 @@ export default async function AdminSectionEditorPage({
                   />
                 </div>
 
-                <div className="admin-form-grid">
-                  <div className="admin-field">
-                    <label htmlFor="footerNavTreatments">Nav treatments</label>
-                    <input
-                      id="footerNavTreatments"
-                      name="footerNavTreatments"
-                      defaultValue={String(footerSettings.navTreatments || "")}
-                      className="admin-input"
-                    />
-                  </div>
-                  <div className="admin-field">
-                    <label htmlFor="footerNavBeforeAfter">Nav before/after</label>
-                    <input
-                      id="footerNavBeforeAfter"
-                      name="footerNavBeforeAfter"
-                      defaultValue={String(footerSettings.navBeforeAfter || "")}
-                      className="admin-input"
-                    />
-                  </div>
-                  <div className="admin-field">
-                    <label htmlFor="footerNavTestimonials">Nav testimonials</label>
-                    <input
-                      id="footerNavTestimonials"
-                      name="footerNavTestimonials"
-                      defaultValue={String(footerSettings.navTestimonials || "")}
-                      className="admin-input"
-                    />
-                  </div>
-                  <div className="admin-field">
-                    <label htmlFor="footerNavFaqs">Nav FAQs</label>
-                    <input
-                      id="footerNavFaqs"
-                      name="footerNavFaqs"
-                      defaultValue={String(footerSettings.navFaqs || "")}
-                      className="admin-input"
-                    />
-                  </div>
-                  <div className="admin-field">
-                    <label htmlFor="footerNavHealthTourism">Nav health tourism</label>
-                    <input
-                      id="footerNavHealthTourism"
-                      name="footerNavHealthTourism"
-                      defaultValue={String(footerSettings.navHealthTourism || "")}
-                      className="admin-input"
-                    />
-                  </div>
-                </div>
+                <FooterNavEditor initialItems={footerNavItems} />
               </>
             ) : (
               <>
@@ -630,10 +597,15 @@ export default async function AdminSectionEditorPage({
                 <input type="hidden" name="footerDescription" value={String(footerSettings.description || "")} />
                 <input type="hidden" name="footerNote" value={String(footerSettings.note || "")} />
                 <input type="hidden" name="footerNavTreatments" value={String(footerSettings.navTreatments || "")} />
+                <input type="hidden" name="footerNavTreatmentsHref" value={String(footerSettings.navTreatmentsHref || "")} />
                 <input type="hidden" name="footerNavBeforeAfter" value={String(footerSettings.navBeforeAfter || "")} />
+                <input type="hidden" name="footerNavBeforeAfterHref" value={String(footerSettings.navBeforeAfterHref || "")} />
                 <input type="hidden" name="footerNavTestimonials" value={String(footerSettings.navTestimonials || "")} />
+                <input type="hidden" name="footerNavTestimonialsHref" value={String(footerSettings.navTestimonialsHref || "")} />
                 <input type="hidden" name="footerNavFaqs" value={String(footerSettings.navFaqs || "")} />
+                <input type="hidden" name="footerNavFaqsHref" value={String(footerSettings.navFaqsHref || "")} />
                 <input type="hidden" name="footerNavHealthTourism" value={String(footerSettings.navHealthTourism || "")} />
+                <input type="hidden" name="footerNavHealthTourismHref" value={String(footerSettings.navHealthTourismHref || "")} />
               </>
             )}
 

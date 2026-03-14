@@ -1,6 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { FormBenefits } from "@/components/form-benefits";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 import type { Section } from "@/lib/cms";
 import { buildFormPayload, submitFormPayload } from "@/lib/form-submit";
 import { getWhatsAppLinkProps } from "@/lib/whatsapp";
@@ -13,6 +16,7 @@ type HeroLpbmProps = {
 export function HeroLpbm({ section, whatsappUrl }: HeroLpbmProps) {
   const settings = (section.settings || {}) as Record<string, unknown>;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState<string | undefined>("+90");
   const videoUrl = String(settings.videoUrl || "");
   const kicker = String(settings.kicker || "Istanbul • Turkiye");
   const titleLine1 = String(settings.titleLine1 || "Dental Implants in Turkiye");
@@ -79,8 +83,22 @@ export function HeroLpbm({ section, whatsappUrl }: HeroLpbmProps) {
           <form className="lpbm-hero__form" onSubmit={handleSubmit}>
             <input type="text" name="company" className="hidden" tabIndex={-1} autoComplete="off" />
             <input type="text" name="fullName" placeholder="Full name" className="lpbm-hero__input" />
-            <input type="tel" name="phone" placeholder="Phone" className="lpbm-hero__input" />
-            <input type="email" name="email" placeholder="Email (optional)" className="lpbm-hero__input" />
+            <div className="lpbm-hero__form-row">
+              <PhoneInput
+                international
+                defaultCountry="TR"
+                value={phoneNumber}
+                onChange={setPhoneNumber}
+                className="phone-input lpbm-hero__phone-input"
+                type="tel"
+                autoComplete="tel"
+                inputMode="tel"
+                name="phone"
+                countrySelectProps={{ "aria-label": "Country code" }}
+                placeholder="Phone"
+              />
+              <input type="email" name="email" placeholder="Email (optional)" className="lpbm-hero__input" />
+            </div>
             <textarea
               name="message"
               placeholder="Message (optional)"
@@ -90,6 +108,7 @@ export function HeroLpbm({ section, whatsappUrl }: HeroLpbmProps) {
             <button type="submit" className="lpbm-hero__submit">
               {isSubmitting ? "Submitting..." : formSubmitText}
             </button>
+            <FormBenefits variant="inverse" />
           </form>
           <p className="lpbm-hero__privacy">{formPrivacyNote}</p>
         </div>

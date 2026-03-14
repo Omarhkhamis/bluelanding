@@ -154,6 +154,26 @@ export type FormSubmission = {
   createdAt: string;
 };
 
+export type SpinSubmission = {
+  id: string;
+  locale: string;
+  source: string;
+  page: string;
+  fullName: string;
+  phone: string;
+  prize: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+};
+
+type SubmissionQueryOptions = {
+  locale?: string;
+  order?: "asc" | "desc" | "newest" | "oldest";
+  month?: string;
+  from?: string;
+  to?: string;
+};
+
 export const supportedDashboardLocales = ["en", "ru"] as const;
 export type DashboardLocale = (typeof supportedDashboardLocales)[number];
 export const managedPageKeys = ["thankyou", "privacy-policy", "terms"] as const;
@@ -704,6 +724,18 @@ async function initCms() {
           phone TEXT NOT NULL,
           email TEXT,
           message TEXT,
+          payload_json JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS spin_submissions (
+          id SERIAL PRIMARY KEY,
+          locale TEXT NOT NULL DEFAULT 'en',
+          source TEXT NOT NULL DEFAULT 'lucky-spin',
+          page TEXT,
+          full_name TEXT NOT NULL,
+          phone TEXT NOT NULL,
+          prize TEXT NOT NULL DEFAULT '',
           payload_json JSONB,
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
@@ -1962,25 +1994,113 @@ export async function createFormSubmission(data: {
   return Number(result.rows[0]?.id || 0);
 }
 
-export async function getFormSubmissions(locale?: string): Promise<FormSubmission[]> {
+export async function createSpinSubmission(data: {
+  locale?: string;
+  source?: string;
+  page?: string;
+  fullName: string;
+  phone: string;
+  prize: string;
+  payload?: Record<string, unknown>;
+}) {
   await initCms();
-  const result = locale
-    ? await pool.query(
-        `
-          SELECT *
-          FROM form_submissions
-          WHERE locale = $1
-          ORDER BY created_at DESC, id DESC
-        `,
-        [locale]
-      )
-    : await pool.query(
-        `
-          SELECT *
-          FROM form_submissions
-          ORDER BY created_at DESC, id DESC
-        `
-      );
+  const result = await pool.query(
+    `
+      INSERT INTO spin_submissions (
+        locale, source, page, full_name, phone, prize, payload_json
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+      RETURNING id
+    `,
+    [
+      data.locale || "en",
+      data.source || "lucky-spin",
+      data.page || null,
+      data.fullName,
+      data.phone,
+      data.prize,
+      JSON.stringify(data.payload || null)
+    ]
+  );
+
+  return Number(result.rows[0]?.id || 0);
+}
+
+function normalizeSubmissionQueryOptions(
+  options: string | SubmissionQueryOptions | undefined
+): SubmissionQueryOptions {
+  if (typeof options === "string") {
+    return { locale: options };
+  }
+
+  return options || {};
+}
+
+function normalizeSubmissionOrder(order: SubmissionQueryOptions["order"]) {
+  return order === "asc" || order === "oldest" ? "ASC" : "DESC";
+}
+
+function getSubmissionDateRange(options: SubmissionQueryOptions) {
+  const month = String(options.month || "").trim();
+
+  if (month) {
+    const [yearValue, monthValue] = month.split("-").map(Number);
+    if (!Number.isNaN(yearValue) && !Number.isNaN(monthValue)) {
+      const start = new Date(yearValue, monthValue - 1, 1, 0, 0, 0, 0);
+      const end = new Date(yearValue, monthValue, 1, 0, 0, 0, 0);
+      return { start, end, endOperator: "<" as const };
+    }
+  }
+
+  const fromValue = String(options.from || "").trim();
+  const toValue = String(options.to || "").trim();
+  const start = fromValue ? new Date(`${fromValue}T00:00:00`) : null;
+  const end = toValue ? new Date(`${toValue}T23:59:59.999`) : null;
+
+  return {
+    start: start && !Number.isNaN(start.getTime()) ? start : null,
+    end: end && !Number.isNaN(end.getTime()) ? end : null,
+    endOperator: "<=" as const
+  };
+}
+
+export async function getFormSubmissions(
+  options?: string | SubmissionQueryOptions
+): Promise<FormSubmission[]> {
+  const queryOptions = normalizeSubmissionQueryOptions(options);
+  await initCms();
+  const params: Array<string | Date> = [];
+  const conditions = [
+    "COALESCE(source, '') <> 'lucky-spin'",
+    "COALESCE(payload_json->>'prize', '') = ''",
+    "COALESCE(payload_json->>'spinPrize', '') = ''"
+  ];
+  const { start, end, endOperator } = getSubmissionDateRange(queryOptions);
+
+  if (queryOptions.locale) {
+    params.push(queryOptions.locale);
+    conditions.push(`locale = $${params.length}`);
+  }
+
+  if (start) {
+    params.push(start);
+    conditions.push(`created_at >= $${params.length}`);
+  }
+
+  if (end) {
+    params.push(end);
+    conditions.push(`created_at ${endOperator} $${params.length}`);
+  }
+
+  const order = normalizeSubmissionOrder(queryOptions.order);
+  const result = await pool.query(
+    `
+      SELECT *
+      FROM form_submissions
+      WHERE ${conditions.join(" AND ")}
+      ORDER BY created_at ${order}, id ${order}
+    `,
+    params
+  );
 
   return result.rows.map((row) => ({
     id: row.id,
@@ -1992,6 +2112,86 @@ export async function getFormSubmissions(locale?: string): Promise<FormSubmissio
     phone: row.phone || "",
     email: row.email || "",
     message: row.message || "",
+    payload: parseJson<Record<string, unknown>>(row.payload_json) || {},
+    createdAt: row.created_at?.toISOString?.() || new Date().toISOString()
+  }));
+}
+
+export async function getSpinSubmissions(
+  options?: string | SubmissionQueryOptions
+): Promise<SpinSubmission[]> {
+  const queryOptions = normalizeSubmissionQueryOptions(options);
+  await initCms();
+  const params: Array<string | Date> = [];
+  const conditions: string[] = [];
+  const { start, end, endOperator } = getSubmissionDateRange(queryOptions);
+
+  if (queryOptions.locale) {
+    params.push(queryOptions.locale);
+    conditions.push(`locale = $${params.length}`);
+  }
+
+  if (start) {
+    params.push(start);
+    conditions.push(`created_at >= $${params.length}`);
+  }
+
+  if (end) {
+    params.push(end);
+    conditions.push(`created_at ${endOperator} $${params.length}`);
+  }
+
+  const order = normalizeSubmissionOrder(queryOptions.order);
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const result = await pool.query(
+    `
+      WITH all_spin AS (
+        SELECT
+          CONCAT('spin-', id) AS id,
+          locale,
+          source,
+          page,
+          full_name,
+          phone,
+          prize,
+          payload_json,
+          created_at
+        FROM spin_submissions
+
+        UNION ALL
+
+        SELECT
+          CONCAT('legacy-', id) AS id,
+          locale,
+          source,
+          page,
+          full_name,
+          phone,
+          COALESCE(payload_json->>'prize', payload_json->>'spinPrize', '') AS prize,
+          payload_json,
+          created_at
+        FROM form_submissions
+        WHERE
+          COALESCE(source, '') = 'lucky-spin'
+          OR COALESCE(payload_json->>'prize', '') <> ''
+          OR COALESCE(payload_json->>'spinPrize', '') <> ''
+      )
+      SELECT *
+      FROM all_spin
+      ${whereClause}
+      ORDER BY created_at ${order}, id ${order}
+    `,
+    params
+  );
+
+  return result.rows.map((row) => ({
+    id: String(row.id || ""),
+    locale: row.locale || "en",
+    source: row.source || "lucky-spin",
+    page: row.page || "",
+    fullName: row.full_name || "",
+    phone: row.phone || "",
+    prize: row.prize || "",
     payload: parseJson<Record<string, unknown>>(row.payload_json) || {},
     createdAt: row.created_at?.toISOString?.() || new Date().toISOString()
   }));

@@ -1,6 +1,6 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
-import { createFormSubmission, getSiteSettings } from "@/lib/cms";
-import { getSafeWhatsAppUrl } from "@/lib/whatsapp";
+import { createFormSubmission, createSpinSubmission, getSiteSettings } from "@/lib/cms";
+import { buildWhatsAppApiUrl } from "@/lib/whatsapp";
 
 function asString(value: unknown) {
   if (value == null) {
@@ -74,11 +74,9 @@ function isValidEmail(value: string) {
 }
 
 function buildWhatsAppRedirect(baseLink: string, fields: Record<string, string>) {
-  const base = getSafeWhatsAppUrl(baseLink);
-
   const name = pickFirstFilled(fields, ["fullName", "name"]);
   const message = pickFirstFilled(fields, ["message", "notes", "details"]);
-  const prize = pickFirstFilled(fields, ["prize"]);
+  const prize = pickFirstFilled(fields, ["prize", "spinPrize"]);
   const phone = pickFirstFilled(fields, ["phone"]);
   const lines = [
     name ? `Name: ${name}` : "",
@@ -86,23 +84,7 @@ function buildWhatsAppRedirect(baseLink: string, fields: Record<string, string>)
     message ? `Message: ${message}` : "",
     prize ? `Prize: ${prize}` : ""
   ].filter(Boolean);
-
-  try {
-    const url = new URL(base);
-    const existingText = url.searchParams.get("text");
-    const nextText = lines.join("\n");
-
-    if (nextText) {
-      url.searchParams.set(
-        "text",
-        existingText ? `${existingText}\n\n${nextText}` : nextText
-      );
-    }
-
-    return url.toString();
-  } catch {
-    return base;
-  }
+  return buildWhatsAppApiUrl(baseLink, lines.join("\n"));
 }
 
 export async function POST(request: Request) {
@@ -124,7 +106,11 @@ export async function POST(request: Request) {
   const phone = normalizePhone(pickFirstFilled(cleaned, ["phone"]));
   const email = pickFirstFilled(cleaned, ["email"]);
   const message = pickFirstFilled(cleaned, ["message", "notes", "details"]);
+  const prize = pickFirstFilled(cleaned, ["prize", "spinPrize"]);
   const locale = cleaned.locale === "ru" ? "ru" : "en";
+  const source = cleaned.source || "website";
+  const submittedAt = new Date().toISOString();
+  const isSpin = source === "lucky-spin" || Boolean(prize);
 
   if (!fullName || !phone) {
     return Response.json({ ok: false, error: "MISSING_CONTACT_INFO" }, { status: 400 });
@@ -138,30 +124,51 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "INVALID_EMAIL" }, { status: 400 });
   }
 
-  await createFormSubmission({
-    locale,
-    source: cleaned.source || "website",
-    formName: cleaned.formName || "",
-    page: cleaned.page || "",
+  const storedPayload = {
+    ...cleaned,
+    source,
     fullName,
     phone,
     email,
     message,
-    payload: {
-      ...cleaned,
-      phone,
-      submittedAt: new Date().toISOString()
-    }
-  });
+    prize,
+    submittedAt
+  };
 
-  const siteSettings = await getSiteSettings(locale);
-  const redirectTo = buildWhatsAppRedirect(siteSettings.whatsappUrl, {
-    ...cleaned,
-    fullName,
-    phone,
-    email,
-    message
-  });
+  if (isSpin) {
+    await createSpinSubmission({
+      locale,
+      source,
+      page: cleaned.page || "",
+      fullName,
+      phone,
+      prize,
+      payload: storedPayload
+    });
+  } else {
+    await createFormSubmission({
+      locale,
+      source,
+      formName: cleaned.formName || "",
+      page: cleaned.page || "",
+      fullName,
+      phone,
+      email,
+      message,
+      payload: storedPayload
+    });
+  }
+
+  let siteWhatsappUrl = "";
+
+  try {
+    const siteSettings = await getSiteSettings(locale);
+    siteWhatsappUrl = siteSettings.whatsappUrl || "";
+  } catch {
+    siteWhatsappUrl = "";
+  }
+
+  const redirectTo = buildWhatsAppRedirect(cleaned.whatsappUrl || siteWhatsappUrl, storedPayload);
 
   return Response.json({
     ok: true,

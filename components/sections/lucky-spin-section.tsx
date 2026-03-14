@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 import type { Section } from "@/lib/cms";
 import {
   buildFormPayload,
@@ -100,7 +102,7 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
     email?: string;
   }>({});
   const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState<string | undefined>("+90");
 
   const wheelBackground = useMemo(() => {
     if (!prizes.length) {
@@ -200,11 +202,21 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
           ...validation.payload,
           prize: chosenPrize
         },
-        popupOptions
+        {
+          ...popupOptions,
+          skipRedirect: true
+        }
       );
 
       if (!submitResult.ok) {
         setIsSubmitting(false);
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        window.setTimeout(() => {
+          window.location.assign(String(submitResult.thankYouUrl || "/thankyou"));
+        }, 900);
       }
     }, 3600);
   }
@@ -298,20 +310,25 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
             {fieldErrors.fullName ? (
               <p className="lucky-spin-section__field-error">{fieldErrors.fullName}</p>
             ) : null}
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Phone"
-              value={phone}
-              onChange={(event) => {
-                setPhone(event.target.value);
+            <PhoneInput
+              international
+              defaultCountry="TR"
+              value={phoneNumber}
+              onChange={(value) => {
+                setPhoneNumber(value);
                 if (fieldErrors.phone) {
                   setFieldErrors((current) => ({ ...current, phone: undefined }));
                 }
               }}
-              className={`lucky-spin-section__input${
+              className={`phone-input lucky-spin-section__phone-input${
                 fieldErrors.phone ? " lucky-spin-section__input--error" : ""
               }`}
+              type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              name="phone"
+              countrySelectProps={{ "aria-label": "Country code" }}
+              placeholder="Phone"
             />
             {fieldErrors.phone ? (
               <p className="lucky-spin-section__field-error">{fieldErrors.phone}</p>

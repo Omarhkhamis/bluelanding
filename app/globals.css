@@ -456,6 +456,13 @@ html {
   border: 0;
   outline: 0;
   background: transparent;
+  color-scheme: light;
+}
+
+.phone-input .PhoneInputCountrySelect optgroup,
+.phone-input .PhoneInputCountrySelect option {
+  background: #ffffff;
+  color: #000000;
 }
 
 .phone-input .PhoneInputInput {
@@ -847,7 +854,7 @@ html {
   z-index: 1;
   display: grid;
   min-height: 100vh;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 420px);
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 470px);
   align-items: center;
   gap: 2rem 3rem;
   padding-block: 4.5rem;
@@ -933,6 +940,11 @@ html {
   gap: 0.85rem;
 }
 
+.lpbm-hero__form-row {
+  display: grid;
+  gap: 0.85rem;
+}
+
 .lpbm-hero__input,
 .lpbm-hero__textarea,
 .lucky-spin-section__input {
@@ -944,9 +956,99 @@ html {
   color: #ffffff;
 }
 
+.lpbm-hero__phone-input {
+  width: 100%;
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.lucky-spin-section__phone-input {
+  width: 100%;
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.lpbm-hero__phone-input .PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 0 0 auto;
+  padding: 0 0.875rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+}
+
+.lucky-spin-section__phone-input .PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 0 0 auto;
+  padding: 0 0.875rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+}
+
+.lpbm-hero__phone-input .PhoneInputCountrySelect {
+  height: 3.25rem;
+  width: 3.75rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #ffffff;
+  color-scheme: light;
+}
+
+.lucky-spin-section__phone-input .PhoneInputCountrySelect {
+  height: 3.25rem;
+  width: 3.75rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #ffffff;
+  color-scheme: light;
+}
+
+.lpbm-hero__phone-input .PhoneInputCountrySelect optgroup,
+.lpbm-hero__phone-input .PhoneInputCountrySelect option {
+  background: #ffffff;
+  color: #000000;
+}
+
+.lucky-spin-section__phone-input .PhoneInputCountrySelect optgroup,
+.lucky-spin-section__phone-input .PhoneInputCountrySelect option {
+  background: #ffffff;
+  color: #000000;
+}
+
+.lpbm-hero__phone-input .PhoneInputInput {
+  height: 3.25rem;
+  padding: 0 1rem;
+  background: transparent;
+  color: #ffffff;
+}
+
+.lucky-spin-section__phone-input .PhoneInputInput {
+  height: 3.25rem;
+  padding: 0 1rem;
+  background: transparent;
+  color: #ffffff;
+}
+
 .lpbm-hero__input::placeholder,
 .lpbm-hero__textarea::placeholder,
 .lucky-spin-section__input::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.lpbm-hero__phone-input .PhoneInputInput::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.lucky-spin-section__phone-input .PhoneInputInput::placeholder {
   color: rgba(255, 255, 255, 0.42);
 }
 
@@ -955,6 +1057,24 @@ html {
 .lucky-spin-section__input:focus {
   outline: 0;
   border-color: rgba(255, 255, 255, 0.28);
+}
+
+.lpbm-hero__phone-input:focus-within {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.lucky-spin-section__phone-input:focus-within {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.lpbm-hero__phone-input .PhoneInputInput:focus,
+.lpbm-hero__phone-input .PhoneInputCountrySelect:focus {
+  outline: 0;
+}
+
+.lucky-spin-section__phone-input .PhoneInputInput:focus,
+.lucky-spin-section__phone-input .PhoneInputCountrySelect:focus {
+  outline: 0;
 }
 
 .lucky-spin-section__input--error {
@@ -1275,6 +1395,13 @@ html {
   gap: 1.25rem;
 }
 
+.certificates-section__mobile-slider {
+  display: none;
+  position: relative;
+  margin-bottom: 1rem;
+  padding-inline: 2.5rem;
+}
+
 .certificates-section__item {
   margin: 0;
   border-radius: 1.4rem;
@@ -1289,6 +1416,36 @@ html {
   max-width: min(100%, 360px);
   height: auto;
   margin: 0 auto;
+}
+
+.certificates-section__item--mobile {
+  display: flex;
+  justify-content: center;
+}
+
+.certificates-section__nav {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  color: hsl(var(--dental-navy));
+  transition: color 180ms ease;
+}
+
+.certificates-section__nav:hover {
+  color: hsl(var(--primary));
+}
+
+.certificates-section__nav--prev {
+  left: 0;
+}
+
+.certificates-section__nav--next {
+  right: 0;
 }
 
 .reviews-section {
@@ -1372,11 +1529,20 @@ html {
 .reviews-section__card {
   width: 21rem;
   flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
   border: 1px solid hsl(var(--border));
   border-radius: 1.75rem;
   background: rgba(255, 255, 255, 0.92);
   padding: 1.55rem;
   box-shadow: 0 20px 44px rgba(21, 28, 77, 0.08);
+  outline: none;
+}
+
+.reviews-section__card:hover,
+.reviews-section__card:focus-visible,
+.reviews-section__card:focus-within {
+  box-shadow: 0 26px 54px rgba(21, 28, 77, 0.14);
 }
 
 .reviews-section__card-top {
@@ -1415,6 +1581,33 @@ html {
   margin: 1rem 0 0;
   color: hsl(var(--foreground) / 0.78);
   line-height: 1.85;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.reviews-section__card:hover .reviews-section__text,
+.reviews-section__card:focus-visible .reviews-section__text,
+.reviews-section__card:focus-within .reviews-section__text {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
+.reviews-section__hint {
+  margin: 0.85rem 0 0;
+  color: hsl(var(--primary));
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.reviews-section__card:hover .reviews-section__hint,
+.reviews-section__card:focus-visible .reviews-section__hint,
+.reviews-section__card:focus-within .reviews-section__hint {
+  display: none;
 }
 
 .reviews-section__cta-wrap {
@@ -1435,11 +1628,7 @@ html {
 }
 
 .lucky-spin-section {
-  background: linear-gradient(
-    180deg,
-    hsl(var(--primary)),
-    hsl(var(--dental-green-dark))
-  );
+  background: #2a3089;
   color: #ffffff;
   padding-block: 5.5rem;
 }
@@ -1460,10 +1649,10 @@ html {
   background:
     linear-gradient(
       180deg,
-      hsl(var(--primary) / 0.94),
-      hsl(var(--dental-green-dark) / 0.84)
+      rgb(42 48 137 / 0.94),
+      rgb(42 48 137 / 0.84)
     ),
-    radial-gradient(circle at top right, hsl(var(--primary) / 0.34), transparent 30%);
+    radial-gradient(circle at top right, rgb(79 88 191 / 0.32), transparent 30%);
 }
 
 .lucky-spin-section__inner {
@@ -1610,6 +1799,13 @@ html {
   }
 }
 
+@media (min-width: 768px) {
+  .lpbm-hero__form-row {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: stretch;
+  }
+}
+
 @media (max-width: 900px) {
   .lpbm-header__inner {
     min-height: 76px;
@@ -1636,34 +1832,14 @@ html {
     max-width: 100%;
   }
 
+  .matrix-section__table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .matrix-section__table {
-    min-width: 100%;
-  }
-
-  .matrix-section__table thead {
-    display: none;
-  }
-
-  .matrix-section__table,
-  .matrix-section__table tbody,
-  .matrix-section__table tr,
-  .matrix-section__table td {
-    display: block;
-  }
-
-  .matrix-section__table tr {
-    margin-bottom: 1rem;
-    border: 1px solid hsl(var(--border));
-    border-radius: 1.2rem;
-    overflow: hidden;
-  }
-
-  .matrix-section__table td {
-    padding: 0.95rem 1rem;
-  }
-
-  .matrix-section__cell-label {
-    display: block;
+    min-width: 760px;
   }
 
   .reviews-section__head,
@@ -1729,6 +1905,14 @@ html {
     padding-block: 4.25rem;
   }
 
+  .certificates-section__mobile-slider {
+    display: block;
+  }
+
+  .certificates-section__track {
+    display: none;
+  }
+
   .certificates-section__track {
     grid-template-columns: 1fr;
   }
@@ -1756,6 +1940,10 @@ html {
   .reviews-section__card {
     width: min(86vw, 20rem);
     scroll-snap-align: start;
+  }
+
+  .reviews-section__hint {
+    font-size: 0.72rem;
   }
 
   .lucky-spin-section__wheel {

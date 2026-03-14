@@ -3,10 +3,10 @@ import {
   formatDataLeadsDate,
   normalizeDataLeadsFilters
 } from "@/lib/data-leads";
-import { getFormSubmissions } from "@/lib/cms";
+import { getSpinSubmissions } from "@/lib/cms";
 import { FormsDataNav } from "@/components/admin/forms-data-nav";
 
-export default async function AdminFormDataPage({
+export default async function AdminSpinDataPage({
   searchParams
 }: {
   searchParams: Promise<{
@@ -18,28 +18,28 @@ export default async function AdminFormDataPage({
   }>;
 }) {
   const filters = normalizeDataLeadsFilters(await searchParams);
-  const records = await getFormSubmissions({
+  const records = await getSpinSubmissions({
     order: filters.order,
     month: filters.month,
     from: filters.from,
     to: filters.to
   });
   const exportQuery = buildDataLeadsQueryString(filters);
-  const resetHref = `/admin/form-data?locale=${filters.locale}`;
+  const resetHref = `/admin/spin-data?locale=${filters.locale}`;
 
   return (
     <>
       <div className="admin-page-head">
         <div>
-          <div className="admin-eyebrow">Form Data</div>
+          <div className="admin-eyebrow">Spin Data</div>
           <h1 className="admin-page-title">Submissions</h1>
           <p className="admin-help">
             Total records across all locales: {records.length}
           </p>
-          <FormsDataNav locale={filters.locale} current="form-data" />
+          <FormsDataNav locale={filters.locale} current="spin-data" />
         </div>
         <a
-          href={`/admin/form-data/export?${exportQuery}`}
+          href={`/admin/spin-data/export?${exportQuery}`}
           className="admin-button admin-button-link"
         >
           Export CSV
@@ -109,40 +109,28 @@ export default async function AdminFormDataPage({
 
       <section className="admin-card">
         {records.length === 0 ? (
-          <p className="admin-muted">No form submissions yet.</p>
+          <p className="admin-muted">No spin submissions yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  <th className="px-4 py-3">Form</th>
                   <th className="px-4 py-3">Locale</th>
                   <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Phone</th>
-                  <th className="px-4 py-3">Message</th>
+                  <th className="px-4 py-3">Prize</th>
                   <th className="px-4 py-3">Submitted</th>
                 </tr>
               </thead>
               <tbody>
                 {records.map((record) => (
                   <tr key={record.id} className="border-b border-border/70 align-top">
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      {record.formName || record.source}
-                    </td>
                     <td className="px-4 py-3">{(record.locale || "en").toUpperCase()}</td>
-                    <td className="px-4 py-3">{record.fullName || "—"}</td>
-                    <td className="px-4 py-3">{record.email || "—"}</td>
-                    <td className="px-4 py-3">{record.phone || "—"}</td>
-                    <td className="px-4 py-3">
-                      {record.message ? (
-                        <p className="max-w-sm whitespace-pre-wrap text-sm text-foreground/80">
-                          {record.message}
-                        </p>
-                      ) : (
-                        "—"
-                      )}
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      {record.fullName || "—"}
                     </td>
+                    <td className="px-4 py-3">{record.phone || "—"}</td>
+                    <td className="px-4 py-3">{record.prize || "—"}</td>
                     <td className="px-4 py-3 text-foreground/70">
                       {formatDataLeadsDate(record.createdAt)}
                     </td>

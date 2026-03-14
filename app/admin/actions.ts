@@ -30,6 +30,7 @@ import {
   clearAdminSession,
   createAdminSession
 } from "@/lib/admin-auth";
+import { getLegacyFooterNavSettings, type FooterNavItem } from "@/lib/footer-nav";
 
 function getLocale(formData: FormData) {
   const rawLocale = String(formData.get("locale") || "en");
@@ -219,6 +220,24 @@ function parseItemIndexes(formData: FormData) {
   return Array.from(indexes).sort((a, b) => a - b);
 }
 
+function parseFooterNavItems(formData: FormData) {
+  const navItemCount = Number(formData.get("footerNavItemCount") || 0);
+  const items: FooterNavItem[] = [];
+
+  for (let index = 0; index < navItemCount; index += 1) {
+    const label = String(formData.get(`footerNavItems.${index}.label`) || "").trim();
+    const href = String(formData.get(`footerNavItems.${index}.href`) || "").trim();
+
+    if (!label && !href) {
+      continue;
+    }
+
+    items.push({ label, href });
+  }
+
+  return items;
+}
+
 export async function saveSectionAction(formData: FormData) {
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin");
@@ -275,19 +294,62 @@ export async function saveSectionAction(formData: FormData) {
     normalizedSectionSettings.description = String(formData.get("footerDescription") || "").trim();
     normalizedSectionSettings.badge = String(formData.get("footerBadge") || "").trim();
     normalizedSectionSettings.note = String(formData.get("footerNote") || "").trim();
-    normalizedSectionSettings.navTreatments = String(
-      formData.get("footerNavTreatments") || ""
-    ).trim();
-    normalizedSectionSettings.navBeforeAfter = String(
-      formData.get("footerNavBeforeAfter") || ""
-    ).trim();
-    normalizedSectionSettings.navTestimonials = String(
-      formData.get("footerNavTestimonials") || ""
-    ).trim();
-    normalizedSectionSettings.navFaqs = String(formData.get("footerNavFaqs") || "").trim();
-    normalizedSectionSettings.navHealthTourism = String(
-      formData.get("footerNavHealthTourism") || ""
-    ).trim();
+
+    if (formData.has("footerNavItemCount")) {
+      const navItems = parseFooterNavItems(formData);
+      normalizedSectionSettings.navItems = navItems;
+      Object.assign(normalizedSectionSettings, getLegacyFooterNavSettings(navItems));
+    } else {
+      if (formData.has("footerNavTreatments")) {
+        normalizedSectionSettings.navTreatments = String(
+          formData.get("footerNavTreatments") || ""
+        ).trim();
+      }
+      if (formData.has("footerNavTreatmentsHref")) {
+        normalizedSectionSettings.navTreatmentsHref = String(
+          formData.get("footerNavTreatmentsHref") || ""
+        ).trim();
+      }
+      if (formData.has("footerNavBeforeAfter")) {
+        normalizedSectionSettings.navBeforeAfter = String(
+          formData.get("footerNavBeforeAfter") || ""
+        ).trim();
+      }
+      if (formData.has("footerNavBeforeAfterHref")) {
+        normalizedSectionSettings.navBeforeAfterHref = String(
+          formData.get("footerNavBeforeAfterHref") || ""
+        ).trim();
+      }
+      if (formData.has("footerNavTestimonials")) {
+        normalizedSectionSettings.navTestimonials = String(
+          formData.get("footerNavTestimonials") || ""
+        ).trim();
+      }
+      if (formData.has("footerNavTestimonialsHref")) {
+        normalizedSectionSettings.navTestimonialsHref = String(
+          formData.get("footerNavTestimonialsHref") || ""
+        ).trim();
+      }
+      if (formData.has("footerNavFaqs")) {
+        normalizedSectionSettings.navFaqs = String(formData.get("footerNavFaqs") || "").trim();
+      }
+      if (formData.has("footerNavFaqsHref")) {
+        normalizedSectionSettings.navFaqsHref = String(
+          formData.get("footerNavFaqsHref") || ""
+        ).trim();
+      }
+      if (formData.has("footerNavHealthTourism")) {
+        normalizedSectionSettings.navHealthTourism = String(
+          formData.get("footerNavHealthTourism") || ""
+        ).trim();
+      }
+      if (formData.has("footerNavHealthTourismHref")) {
+        normalizedSectionSettings.navHealthTourismHref = String(
+          formData.get("footerNavHealthTourismHref") || ""
+        ).trim();
+      }
+    }
+
     normalizedSectionSettings.phoneLabel = String(formData.get("footerPhoneLabel") || "").trim();
     normalizedSectionSettings.emailLabel = String(formData.get("footerEmailLabel") || "").trim();
     normalizedSectionSettings.addressLabel = String(

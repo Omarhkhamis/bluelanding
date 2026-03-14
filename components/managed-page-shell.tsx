@@ -57,6 +57,7 @@ export async function ManagedPageShell({
         footer={siteContent.footer}
         navLinks={siteContent.navLinks}
         footerSection={activeFooter}
+        whatsappUrl={siteContent.site.whatsappUrl}
       />
       <WhatsAppFloat href={siteContent.site.whatsappUrl} />
     </div>

@@ -104,7 +104,11 @@ export function ReviewsSection({ section, provider, whatsappUrl }: ReviewsSectio
         <div className="reviews-section__marquee">
           <div className="reviews-section__track">
             {trackItems.map((review, index) => (
-              <article key={`${provider}-${review.id}-${index}`} className="reviews-section__card">
+              <article
+                key={`${provider}-${review.id}-${index}`}
+                className="reviews-section__card"
+                tabIndex={0}
+              >
                 <div className="reviews-section__card-top">
                   <span className="reviews-section__avatar">
                     {(review.altText || review.title || "?").slice(0, 2).toUpperCase()}
@@ -115,6 +119,9 @@ export function ReviewsSection({ section, provider, whatsappUrl }: ReviewsSectio
                   </div>
                 </div>
                 <p className="reviews-section__text">{review.description}</p>
+                {review.description.trim().length > 160 ? (
+                  <p className="reviews-section__hint">Hover to read more</p>
+                ) : null}
               </article>
             ))}
           </div>
