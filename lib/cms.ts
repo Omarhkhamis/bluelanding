@@ -23,11 +23,13 @@ import {
   serviceDetailCards,
   services,
   socialLinks,
+  teamMembers,
   treatmentMatrixDefaults,
   trustpilotReviewsDefaults,
   whatsappUrl,
   whyChooseItems
 } from "@/lib/site-data";
+import { getSafeWhatsAppUrl } from "@/lib/whatsapp";
 
 const uploadsDir = path.join(process.cwd(), "public", "uploads");
 
@@ -236,6 +238,20 @@ type SeedSection = {
 
 function getExtendedSectionSeeds(): SeedSection[] {
   return [
+    {
+      key: "team",
+      name: "Team",
+      sectionType: "collection",
+      sortOrder: 2,
+      heading: "Meet The Team Supporting Your Smile Journey",
+      items: teamMembers.map((item, index) => ({
+        itemType: "team-member",
+        title: item.title,
+        description: item.description,
+        imageUrl: item.image,
+        sortOrder: index
+      }))
+    },
     {
       key: "header-2",
       name: "Header 2",
@@ -1135,6 +1151,35 @@ async function ensureExtendedSections(locale: string) {
           );
         }
       }
+
+      if (section.key === "team" && (section.items?.length || 0) > 0) {
+        const existingTeamItems = await client.query(
+          `
+            SELECT id, sort_order, description
+            FROM section_items
+            WHERE section_key = 'team' AND locale = $1
+            ORDER BY sort_order ASC, id ASC
+          `,
+          [locale]
+        );
+
+        for (const seedItem of section.items || []) {
+          const matchingItem = existingTeamItems.rows.find(
+            (row) => row.sort_order === seedItem.sortOrder
+          );
+
+          if (matchingItem && !(matchingItem.description || "").trim() && seedItem.description) {
+            await client.query(
+              `
+                UPDATE section_items
+                SET description = $1, updated_at = NOW()
+                WHERE id = $2
+              `,
+              [seedItem.description, matchingItem.id]
+            );
+          }
+        }
+      }
     }
   });
 }
@@ -1267,7 +1312,7 @@ export async function getSiteSettings(locale = "en"): Promise<SiteSettings> {
     siteDescription: row.site_description || "",
     logoUrl: row.logo_url || "",
     faviconUrl: row.favicon_url || "",
-    whatsappUrl: row.whatsapp_url
+    whatsappUrl: getSafeWhatsAppUrl(row.whatsapp_url)
   };
 }
 
@@ -2069,6 +2114,7 @@ export async function getPublicSiteContent(locale = "en") {
     hero2,
     whyChoose: get("why-choose"),
     servicesSection: get("services"),
+    teamSection: get("team"),
     treatmentMatrix: get("treatment-matrix"),
     beforeAfter: get("before-after"),
     serviceDetails: get("service-details"),

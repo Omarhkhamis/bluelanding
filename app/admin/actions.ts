@@ -392,8 +392,17 @@ export async function saveSectionAction(formData: FormData) {
       normalizedSettings.buttonLabel = itemButtonLabel;
     }
 
+    if (key === "team") {
+      delete normalizedSettings.items;
+      delete normalizedSettings.buttonLabel;
+    }
+
     const nextSettings =
-      Object.keys(normalizedSettings).length > 0 ? normalizedSettings : existingSettings;
+      key === "team"
+        ? (Object.keys(normalizedSettings).length > 0 ? normalizedSettings : null)
+        : Object.keys(normalizedSettings).length > 0
+          ? normalizedSettings
+          : existingSettings;
 
     await upsertSectionItem({
       id: Number(formData.get(`items.${index}.id`) || 0) || undefined,

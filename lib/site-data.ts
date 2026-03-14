@@ -118,6 +118,27 @@ export const services = [
   }
 ];
 
+export const teamMembers = [
+  {
+    title: "Patient Coordinator",
+    image: "/assets/images/image-015.webp",
+    description:
+      "Oral and patient care coordination focused on case review, treatment planning guidance, and a smooth consultation journey from first contact to confirmed appointment."
+  },
+  {
+    title: "Treatment Planner",
+    image: "/assets/images/image-016.webp",
+    description:
+      "Specialized in explaining treatment timelines, package options, and clinical steps with clear communication that helps patients understand the full process with confidence."
+  },
+  {
+    title: "Guest Relations",
+    image: "/assets/images/image-017.webp",
+    description:
+      "Dedicated to accommodation support, airport transfer coordination, and on-ground assistance to keep every stage of the visit comfortable, organized, and stress-free."
+  }
+];
+
 export const beforeAfterItems = [
   "/assets/images/image-002.png",
   "/assets/images/image-006.png",

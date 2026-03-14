@@ -189,19 +189,18 @@ export function validateFormPayload(payload: FormPayload): ValidationResult {
 
 export async function submitFormPayload(payload: FormPayload, options: SubmitOptions = {}) {
   const validation = validateFormPayload(payload);
+
+  if (!validation.ok) {
+    await showAlert(validation.title, validation.text);
+    return { ok: false };
+  }
+
   const popup =
     options.popup !== undefined
       ? options.popup
       : typeof window !== "undefined"
         ? window.open("", "_blank", "noopener,noreferrer")
         : null;
-
-  if (!validation.ok) {
-    popup?.close();
-    await showAlert(validation.title, validation.text);
-    return { ok: false };
-  }
-
   const normalizedPayload = validation.payload;
 
   try {

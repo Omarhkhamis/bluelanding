@@ -36,6 +36,7 @@ export default async function AdminSectionEditorPage({
   const isAnyHeaderSection = isHeaderSection || isHeader2Section;
   const isAnyFooterSection = isFooterSection || isFooter2Section;
   const isServicesSection = section.key === "services";
+  const isTeamSection = section.key === "team";
   const isTreatmentMatrixSection = section.key === "treatment-matrix";
   const isBeforeAfterSection = section.key === "before-after";
   const isCertificatesGallerySection = section.key === "certificates-gallery";
@@ -53,6 +54,8 @@ export default async function AdminSectionEditorPage({
     ? "nav-link"
     : isServicesSection
       ? "service"
+      : isTeamSection
+        ? "team-member"
       : isBeforeAfterSection
         ? "slide"
       : isCertificatesGallerySection
@@ -1204,78 +1207,113 @@ export default async function AdminSectionEditorPage({
 
                 return (
                   <article key={item.id} className="admin-card admin-form">
-                  <input type="hidden" name={`items.${index}.id`} value={item.id} />
-                  <div className="admin-card-header">
-                    <div>
-                      <div className="admin-eyebrow">Item {index + 1}</div>
-                      <h3>{item.itemType}</h3>
+                    <input type="hidden" name={`items.${index}.id`} value={item.id} />
+                    <div className="admin-card-header">
+                      <div>
+                        <div className="admin-eyebrow">Item {index + 1}</div>
+                        <h3>{item.itemType}</h3>
+                      </div>
                     </div>
-                  </div>
 
-                  {isServicesSection ? (
-                    <>
-                      <input type="hidden" name={`items.${index}.itemType`} value={item.itemType} />
-                      <input type="hidden" name={`items.${index}.videoUrl`} value={item.videoUrl} />
-                      <input type="hidden" name={`items.${index}.altText`} value={item.altText} />
-                      <div className="admin-form-grid">
-                        <div className="admin-field">
-                          <label>Service title</label>
-                          <input
-                            name={`items.${index}.title`}
-                            defaultValue={item.title}
-                            className="admin-input"
+                    {isServicesSection ? (
+                      <>
+                        <input type="hidden" name={`items.${index}.itemType`} value={item.itemType} />
+                        <input type="hidden" name={`items.${index}.videoUrl`} value={item.videoUrl} />
+                        <input type="hidden" name={`items.${index}.altText`} value={item.altText} />
+                        <div className="admin-form-grid">
+                          <div className="admin-field">
+                            <label>Card title</label>
+                            <input
+                              name={`items.${index}.title`}
+                              defaultValue={item.title}
+                              className="admin-input"
+                            />
+                          </div>
+                          <MediaUrlField
+                            name={`items.${index}.imageUrl`}
+                            label="Card image URL"
+                            defaultValue={item.imageUrl}
                           />
+                          <div className="admin-field">
+                            <label>Items heading</label>
+                            <input
+                              name={`items.${index}.subtitle`}
+                              defaultValue={item.subtitle}
+                              className="admin-input"
+                            />
+                          </div>
+                          <div className="admin-field">
+                            <label>Button text</label>
+                            <input
+                              name={`items.${index}.buttonLabel`}
+                              defaultValue={
+                                (item.settings.buttonLabel as string | undefined) ||
+                                "Get More Information"
+                              }
+                              className="admin-input"
+                            />
+                          </div>
+                          <div className="admin-field">
+                            <label>Button and items link</label>
+                            <input
+                              name={`items.${index}.linkUrl`}
+                              defaultValue={item.linkUrl}
+                              className="admin-input"
+                            />
+                          </div>
                         </div>
-                        <MediaUrlField
-                          name={`items.${index}.imageUrl`}
-                          label="Service image URL"
-                          defaultValue={item.imageUrl}
+
+                        <input
+                          type="hidden"
+                          name={`items.${index}.description`}
+                          value={item.description}
                         />
+
                         <div className="admin-field">
-                          <label>Items heading</label>
-                          <input
-                            name={`items.${index}.subtitle`}
-                            defaultValue={item.subtitle}
-                            className="admin-input"
+                          <label>Card items</label>
+                          <textarea
+                            name={`items.${index}.itemsText`}
+                            defaultValue={((item.settings.items as string[] | undefined) || []).join("\n")}
+                            className="admin-textarea"
                           />
                         </div>
+                      </>
+                    ) : isTeamSection ? (
+                      <>
+                        <input type="hidden" name={`items.${index}.itemType`} value={item.itemType} />
+                        <input type="hidden" name={`items.${index}.subtitle`} value="" />
+                        <input type="hidden" name={`items.${index}.videoUrl`} value="" />
+                        <input type="hidden" name={`items.${index}.linkUrl`} value="" />
+                        <input type="hidden" name={`items.${index}.altText`} value="" />
+                        <div className="admin-form-grid">
+                          <div className="admin-field">
+                            <label>Team title</label>
+                            <input
+                              name={`items.${index}.title`}
+                              defaultValue={item.title}
+                              className="admin-input"
+                            />
+                          </div>
+                          <MediaUrlField
+                            name={`items.${index}.imageUrl`}
+                            label="Team image URL"
+                            defaultValue={item.imageUrl}
+                          />
+                        </div>
+
                         <div className="admin-field">
-                          <label>Button text</label>
-                          <input
-                            name={`items.${index}.buttonLabel`}
+                          <label>Description</label>
+                          <textarea
+                            name={`items.${index}.description`}
                             defaultValue={
-                              (item.settings.buttonLabel as string | undefined) ||
-                              "Get More Information"
+                              item.description ||
+                              ((item.settings.items as string[] | undefined) || []).join(". ")
                             }
-                            className="admin-input"
+                            className="admin-textarea"
                           />
                         </div>
-                      <div className="admin-field">
-                          <label>Button and items link</label>
-                          <input
-                            name={`items.${index}.linkUrl`}
-                            defaultValue={item.linkUrl}
-                            className="admin-input"
-                          />
-                        </div>
-                      </div>
-
-                      <input
-                        type="hidden"
-                        name={`items.${index}.description`}
-                        value={item.description}
-                      />
-
-                      <div className="admin-field">
-                        <label>Service items</label>
-                        <textarea
-                          name={`items.${index}.itemsText`}
-                          defaultValue={((item.settings.items as string[] | undefined) || []).join("\n")}
-                          className="admin-textarea"
-                        />
-                      </div>
-                    </>
-                  ) : isBeforeAfterSection ? (
+                      </>
+                    ) : isBeforeAfterSection ? (
                     <>
                       <input type="hidden" name={`items.${index}.itemType`} value={item.itemType} />
                       <input type="hidden" name={`items.${index}.title`} value={item.title} />

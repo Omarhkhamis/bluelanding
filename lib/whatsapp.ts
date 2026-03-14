@@ -3,6 +3,12 @@ type LinkBehavior = {
   rel?: "noopener noreferrer";
 };
 
+export const DEFAULT_WHATSAPP_PHONE = "905528007000";
+
+export function getFallbackWhatsAppUrl() {
+  return `https://api.whatsapp.com/send?phone=${DEFAULT_WHATSAPP_PHONE}`;
+}
+
 export function isWhatsAppUrl(url: string) {
   const value = String(url || "").trim().toLowerCase();
 
@@ -28,8 +34,13 @@ export function isWhatsAppUrl(url: string) {
   }
 }
 
+export function getSafeWhatsAppUrl(url: string) {
+  const value = String(url || "").trim();
+  return isWhatsAppUrl(value) ? value : getFallbackWhatsAppUrl();
+}
+
 export function getWhatsAppLinkProps(url: string): LinkBehavior {
-  if (!isWhatsAppUrl(url)) {
+  if (!isWhatsAppUrl(getSafeWhatsAppUrl(url))) {
     return {};
   }
 

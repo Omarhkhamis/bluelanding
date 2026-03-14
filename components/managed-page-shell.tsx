@@ -39,7 +39,7 @@ export async function ManagedPageShell({
         section={activeHeader}
       />
 
-      <main className="px-4 pb-20 pt-28 md:pt-36">
+      <main className="px-4 pb-20 pt-10 md:pt-12">
         <section className="mx-auto max-w-4xl rounded-[32px] border border-border/60 bg-white px-6 py-10 shadow-sm md:px-10 md:py-14">
           <h1 className="text-3xl font-bold tracking-tight text-dental-navy md:text-5xl">
             {title}

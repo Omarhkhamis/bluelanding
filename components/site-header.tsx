@@ -41,7 +41,7 @@ export function SiteHeader({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">
+    <header className="sticky inset-x-0 top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">
       <div className="container-dental">
         <div className="relative flex h-16 items-center justify-center lg:h-24 lg:justify-between">
           <Link

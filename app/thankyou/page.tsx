@@ -3,18 +3,15 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
 import { getManagedPageByKey, getPublicSiteContent } from "@/lib/cms";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 const copy = {
   en: {
     badge: "Request Received",
-    home: "Back To Home",
-    whatsapp: "Open WhatsApp"
+    home: "BACK TO HOME PAGE"
   },
   ru: {
     badge: "Запрос получен",
-    home: "На главную",
-    whatsapp: "Открыть WhatsApp"
+    home: "BACK TO HOME PAGE"
   }
 };
 
@@ -52,49 +49,31 @@ export default async function ThankYouPage({
         section={activeHeader}
       />
 
-      <main
-        className="relative overflow-hidden px-4 pb-20 pt-32 text-white"
-        style={{
-          backgroundImage: "linear-gradient(135deg, #2a3089 0%, #232872 55%, #1c205c 100%)"
-        }}
-      >
-        <div className="absolute inset-0">
-          <div className="absolute left-[-10%] top-[-5%] h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-          <div
-            className="absolute bottom-[-10%] right-[-5%] h-80 w-80 rounded-full blur-3xl"
-            style={{ backgroundColor: "rgba(42, 48, 137, 0.3)" }}
-          />
-        </div>
+      <main className="bg-white px-4">
+        <section className="mx-auto flex min-h-[60vh] max-w-4xl items-center justify-center">
+          <div className="w-full rounded-[32px] bg-white px-6 py-10 text-center text-[#2d2d2d] md:px-12 md:py-14">
+            <div className="inline-flex items-center rounded-full border border-[#2d2d2d]/10 bg-[#2d2d2d]/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#2d2d2d]">
+              {uiCopy.badge}
+            </div>
 
-        <section className="relative mx-auto flex min-h-[70vh] max-w-4xl flex-col items-center justify-center text-center">
-          <div className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
-            {uiCopy.badge}
-          </div>
+            <h1 className="mt-6 text-4xl font-bold tracking-tight text-[#2d2d2d] md:text-6xl">
+              {page?.title || "Thank You"}
+            </h1>
 
-          <h1 className="mt-6 text-4xl font-bold tracking-tight md:text-6xl">
-            {page?.title || "Thank You"}
-          </h1>
+            <div className="mt-6 space-y-4 text-base leading-8 text-[#2d2d2d]/80 md:text-lg">
+              {paragraphs.map((paragraph, index) => (
+                <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
+              ))}
+            </div>
 
-          <div className="mt-6 space-y-4 text-base leading-8 text-white/80 md:text-lg">
-            {paragraphs.map((paragraph, index) => (
-              <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <a
-              href={content.site.whatsappUrl}
-              {...getWhatsAppLinkProps(content.site.whatsappUrl)}
-              className="inline-flex min-w-[200px] items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-dental-navy transition hover:bg-white/90"
-            >
-              {uiCopy.whatsapp}
-            </a>
-            <Link
-              href="/"
-              className="inline-flex min-w-[200px] items-center justify-center rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              {uiCopy.home}
-            </Link>
+            <div className="mb-8 mt-14 flex items-center justify-center md:mb-10 md:mt-16">
+              <Link
+                href={normalizedLocale === "ru" ? "/?locale=ru" : "/"}
+                className="inline-flex min-w-[260px] items-center justify-center rounded-full border border-[#2d2d2d]/15 bg-[#2d2d2d]/5 px-14 py-3 text-sm font-semibold text-[#2d2d2d] transition hover:bg-[#2d2d2d]/10 md:px-14"
+              >
+                {uiCopy.home}
+              </Link>
+            </div>
           </div>
         </section>
       </main>

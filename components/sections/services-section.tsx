@@ -16,10 +16,11 @@ export function ServicesSection({ section, whatsappUrl }: ServicesSectionProps) 
     align: "start",
     loop: true
   });
-  const services = section.items;
+  const cards = section.items;
+  const sectionId = section.key || "services";
 
   return (
-    <section id="services" className="section-padding bg-background">
+    <section id={sectionId} className="section-padding bg-background">
       <div className="container-dental">
         <h2 className="heading-secondary mb-12 text-center text-dental-navy">
           {section.heading}
@@ -28,9 +29,9 @@ export function ServicesSection({ section, whatsappUrl }: ServicesSectionProps) 
         <div className="services-mobile-slider relative mb-8 px-10">
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex -ml-4">
-              {services.map((service) => (
-                <div key={service.id} className="min-w-0 shrink-0 grow-0 basis-full pl-4">
-                  <ServiceCard service={service} whatsappUrl={whatsappUrl} />
+              {cards.map((card) => (
+                <div key={card.id} className="min-w-0 shrink-0 grow-0 basis-full pl-4">
+                  <ServiceCard service={card} whatsappUrl={whatsappUrl} />
                 </div>
               ))}
             </div>
@@ -40,7 +41,7 @@ export function ServicesSection({ section, whatsappUrl }: ServicesSectionProps) 
             type="button"
             className="absolute left-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-dental-navy transition hover:text-primary"
             onClick={() => emblaApi?.scrollPrev()}
-            aria-label="Previous services"
+            aria-label={`Previous ${section.name.toLowerCase()}`}
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -48,23 +49,25 @@ export function ServicesSection({ section, whatsappUrl }: ServicesSectionProps) 
             type="button"
             className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-dental-navy transition hover:text-primary"
             onClick={() => emblaApi?.scrollNext()}
-            aria-label="Next services"
+            aria-label={`Next ${section.name.toLowerCase()}`}
           >
             <ChevronRight className="h-5 w-5" />
           </button>
         </div>
 
         <div className="services-desktop-grid mb-6 grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {services.slice(0, 3).map((service) => (
-            <ServiceCard key={service.id} service={service} whatsappUrl={whatsappUrl} />
+          {cards.slice(0, 3).map((card) => (
+            <ServiceCard key={card.id} service={card} whatsappUrl={whatsappUrl} />
           ))}
         </div>
 
-        <div className="services-desktop-grid mx-auto max-w-2xl grid-cols-1 gap-6 md:grid-cols-2">
-          {services.slice(3).map((service) => (
-            <ServiceCard key={service.id} service={service} whatsappUrl={whatsappUrl} />
-          ))}
-        </div>
+        {cards.length > 3 ? (
+          <div className="services-desktop-grid mx-auto max-w-2xl grid-cols-1 gap-6 md:grid-cols-2">
+            {cards.slice(3).map((card) => (
+              <ServiceCard key={card.id} service={card} whatsappUrl={whatsappUrl} />
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );

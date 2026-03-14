@@ -14,6 +14,7 @@ import { LuckySpinSection } from "@/components/sections/lucky-spin-section";
 import { ReviewsSection } from "@/components/sections/reviews-section";
 import { ServiceDetailsSection } from "@/components/sections/service-details-section";
 import { ServicesSection } from "@/components/sections/services-section";
+import { TeamSection } from "@/components/sections/team-section";
 import { TreatmentMatrixSection } from "@/components/sections/treatment-matrix-section";
 import { WhyChooseSection } from "@/components/sections/why-choose-section";
 import { getPublicSiteContent } from "@/lib/cms";
@@ -60,6 +61,9 @@ export default async function HomePage() {
           section={content.servicesSection}
           whatsappUrl={content.site.whatsappUrl}
         />
+        {content.teamSection?.isActive ? (
+          <TeamSection section={content.teamSection} />
+        ) : null}
         {content.treatmentMatrix?.isActive ? (
           <TreatmentMatrixSection section={content.treatmentMatrix} />
         ) : null}

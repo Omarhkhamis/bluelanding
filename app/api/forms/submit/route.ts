@@ -1,5 +1,6 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { createFormSubmission, getSiteSettings } from "@/lib/cms";
+import { getSafeWhatsAppUrl } from "@/lib/whatsapp";
 
 function asString(value: unknown) {
   if (value == null) {
@@ -73,24 +74,18 @@ function isValidEmail(value: string) {
 }
 
 function buildWhatsAppRedirect(baseLink: string, fields: Record<string, string>) {
-  const base = String(baseLink || "").trim();
-  if (!base) {
-    return "";
-  }
+  const base = getSafeWhatsAppUrl(baseLink);
 
   const name = pickFirstFilled(fields, ["fullName", "name"]);
   const message = pickFirstFilled(fields, ["message", "notes", "details"]);
   const prize = pickFirstFilled(fields, ["prize"]);
   const phone = pickFirstFilled(fields, ["phone"]);
-  const lines = prize
-    ? [
-        "Lucky Spin Submission",
-        name ? `Name: ${name}` : "",
-        prize ? `Prize: ${prize}` : "",
-        message ? `Message: ${message}` : "",
-        phone ? `Phone: ${phone}` : ""
-      ].filter(Boolean)
-    : [name, message].filter(Boolean);
+  const lines = [
+    name ? `Name: ${name}` : "",
+    phone ? `Phone: ${phone}` : "",
+    message ? `Message: ${message}` : "",
+    prize ? `Prize: ${prize}` : ""
+  ].filter(Boolean);
 
   try {
     const url = new URL(base);
