@@ -34,7 +34,7 @@ export function ConsultationCtaSection({
               <a
                 href={ctaUrl}
                 {...getWhatsAppLinkProps(ctaUrl)}
-                className="inline-flex min-w-[160px] items-center justify-center rounded-md bg-[#2D2D2D] px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1a1a1a]"
+                className="inline-flex min-w-[160px] items-center justify-center rounded-md bg-primary px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-primary/90"
               >
                 {section.buttonLabel}
               </a>

@@ -70,7 +70,7 @@ export function ServiceDetailsSection({
           <a
             href={whatsappUrl}
             {...getWhatsAppLinkProps(whatsappUrl)}
-            className="inline-flex min-w-[200px] items-center justify-center rounded-md bg-[#1e1e3f] px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1e1e3f]/90"
+            className="inline-flex min-w-[200px] items-center justify-center rounded-md bg-primary px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-primary/90"
           >
             Get Price Information
           </a>

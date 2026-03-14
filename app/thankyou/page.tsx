@@ -52,10 +52,18 @@ export default async function ThankYouPage({
         section={activeHeader}
       />
 
-      <main className="relative overflow-hidden bg-gradient-to-br from-dental-navy via-[#11184a] to-[#1d2570] px-4 pb-20 pt-32 text-white">
+      <main
+        className="relative overflow-hidden px-4 pb-20 pt-32 text-white"
+        style={{
+          backgroundImage: "linear-gradient(135deg, #2a3089 0%, #232872 55%, #1c205c 100%)"
+        }}
+      >
         <div className="absolute inset-0">
           <div className="absolute left-[-10%] top-[-5%] h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute bottom-[-10%] right-[-5%] h-80 w-80 rounded-full bg-primary/30 blur-3xl" />
+          <div
+            className="absolute bottom-[-10%] right-[-5%] h-80 w-80 rounded-full blur-3xl"
+            style={{ backgroundColor: "rgba(42, 48, 137, 0.3)" }}
+          />
         </div>
 
         <section className="relative mx-auto flex min-h-[70vh] max-w-4xl flex-col items-center justify-center text-center">
