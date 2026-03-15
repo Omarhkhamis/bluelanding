@@ -37,3 +37,6 @@ prisma/dev.db
 /src/generated/prisma
 .env.local
 .env
+
+# deploy AI
+deployai.md

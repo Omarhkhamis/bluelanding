@@ -1,6 +1,7 @@
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdminUser } from "@/lib/admin-auth";
 import { getSections } from "@/lib/cms";
+import { defaultSiteKey } from "@/lib/sites";
 
 export default async function ProtectedAdminLayout({
   children
@@ -8,7 +9,7 @@ export default async function ProtectedAdminLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAdminUser();
-  const sections = await getSections("en");
+  const sections = await getSections(defaultSiteKey, "en");
 
   return (
     <AdminShell

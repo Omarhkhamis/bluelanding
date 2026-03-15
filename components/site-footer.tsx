@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { FooterLpbm } from "@/components/footer-lpbm";
 import type { FooterSettings, Section } from "@/lib/cms";
+import { getSitePagePath, type SiteKey } from "@/lib/sites";
 
 const socialIconMap: Record<string, string> = {
   Facebook:
@@ -14,6 +15,8 @@ const socialIconMap: Record<string, string> = {
 };
 
 type SiteFooterProps = {
+  siteKey: SiteKey;
+  basePath: string;
   footer: FooterSettings;
   navLinks: Array<{
     href: string;
@@ -23,15 +26,29 @@ type SiteFooterProps = {
   whatsappUrl: string;
 };
 
-export function SiteFooter({ footer, navLinks, footerSection, whatsappUrl }: SiteFooterProps) {
+export function SiteFooter({
+  siteKey,
+  basePath,
+  footer,
+  navLinks,
+  footerSection,
+  whatsappUrl
+}: SiteFooterProps) {
   if (footerSection?.key === "footer-2") {
-    return <FooterLpbm footer={footer} footerSection={footerSection} whatsappUrl={whatsappUrl} />;
+    return (
+      <FooterLpbm
+        siteKey={siteKey}
+        basePath={basePath}
+        footer={footer}
+        footerSection={footerSection}
+        whatsappUrl={whatsappUrl}
+      />
+    );
   }
 
   const footerSettings = (footerSection?.settings || {}) as Record<string, unknown>;
-  const pageSuffix = footer.locale === "ru" ? "?locale=ru" : "";
-  const privacyHref = `/privacy-policy${pageSuffix}`;
-  const termsHref = `/terms${pageSuffix}`;
+  const privacyHref = getSitePagePath(siteKey, footer.locale, "privacy-policy");
+  const termsHref = getSitePagePath(siteKey, footer.locale, "terms");
 
   return (
     <footer id="contact" className="bg-dental-navy text-white">
@@ -96,7 +113,7 @@ export function SiteFooter({ footer, navLinks, footerSection, whatsappUrl }: Sit
             {navLinks.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                href={link.href.startsWith("#") ? `${basePath}${link.href}` : link.href}
                 className="text-sm font-medium text-white/60 transition-colors hover:text-white"
               >
                 {link.label}

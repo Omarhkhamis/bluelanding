@@ -1,14 +1,16 @@
 import { ReorderSectionsForm } from "@/components/admin/reorder-sections-form";
 import { StatusNotice } from "@/components/admin/status-notice";
 import { getSections } from "@/lib/cms";
+import { normalizeSiteKey } from "@/lib/sites";
 
 export default async function AdminReorderPage({
   searchParams
 }: {
-  searchParams: Promise<{ locale?: string; status?: string }>;
+  searchParams: Promise<{ locale?: string; site?: string; status?: string }>;
 }) {
-  const { locale = "en", status } = await searchParams;
-  const sections = await getSections(locale);
+  const { locale = "en", site, status } = await searchParams;
+  const siteKey = normalizeSiteKey(site);
+  const sections = await getSections(siteKey, locale);
 
   return (
     <>
@@ -23,6 +25,7 @@ export default async function AdminReorderPage({
       <StatusNotice status={status} />
 
       <ReorderSectionsForm
+        siteKey={siteKey}
         locale={locale}
         sections={sections.map((section) => ({
           key: section.key,

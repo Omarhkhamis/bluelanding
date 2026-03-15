@@ -5,13 +5,15 @@ import {
 } from "@/app/admin/actions";
 import { StatusNotice } from "@/components/admin/status-notice";
 import { getAdminUsers } from "@/lib/cms";
+import { normalizeSiteKey } from "@/lib/sites";
 
 export default async function AdminUsersPage({
   searchParams
 }: {
-  searchParams: Promise<{ locale?: string; status?: string }>;
+  searchParams: Promise<{ locale?: string; site?: string; status?: string }>;
 }) {
-  const { locale = "en", status } = await searchParams;
+  const { locale = "en", site, status } = await searchParams;
+  const siteKey = normalizeSiteKey(site);
   const adminUsers = await getAdminUsers();
 
   return (
@@ -34,6 +36,7 @@ export default async function AdminUsersPage({
           </div>
         </div>
         <form action={createAdminUserAction} className="admin-form">
+          <input type="hidden" name="site" value={siteKey} />
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="returnPath" value="/admin/admin-users" />
           <div className="admin-form-grid">
@@ -77,6 +80,7 @@ export default async function AdminUsersPage({
         <div className="admin-list">
           {adminUsers.map((admin) => (
             <form key={admin.id} action={updateAdminUserAction} className="admin-card admin-form">
+              <input type="hidden" name="site" value={siteKey} />
               <input type="hidden" name="locale" value={locale} />
               <input type="hidden" name="returnPath" value="/admin/admin-users" />
               <input type="hidden" name="id" value={admin.id} />
@@ -139,6 +143,7 @@ export default async function AdminUsersPage({
                 <td>{new Date(admin.createdAt).toLocaleDateString()}</td>
                 <td>
                   <form action={deleteAdminUserAction} className="admin-inline-form">
+                    <input type="hidden" name="site" value={siteKey} />
                     <input type="hidden" name="locale" value={locale} />
                     <input type="hidden" name="returnPath" value="/admin/admin-users" />
                     <input type="hidden" name="id" value={admin.id} />

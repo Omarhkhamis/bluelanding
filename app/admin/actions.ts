@@ -10,7 +10,7 @@ import {
   deleteAdminUser,
   deleteMediaAsset,
   deleteSectionItem,
-  getManagedPagePath,
+  getManagedPagePublicPath,
   getSectionByKey,
   managedPageKeys,
   reorderSections,
@@ -31,6 +31,7 @@ import {
   createAdminSession
 } from "@/lib/admin-auth";
 import { getLegacyFooterNavSettings, type FooterNavItem } from "@/lib/footer-nav";
+import { buildAdminPath, defaultSiteKey, normalizeSiteKey } from "@/lib/sites";
 
 function getLocale(formData: FormData) {
   const rawLocale = String(formData.get("locale") || "en");
@@ -39,18 +40,31 @@ function getLocale(formData: FormData) {
     : "en";
 }
 
+function getSiteKey(formData: FormData) {
+  return normalizeSiteKey(String(formData.get("site") || defaultSiteKey));
+}
+
 function getReturnPath(formData: FormData, fallback: string) {
   const pathname = String(formData.get("returnPath") || fallback);
   return pathname.startsWith("/admin") ? pathname : fallback;
 }
 
-function redirectWithStatus(pathname: string, locale: string, status: "saved" | "error") {
-  redirect(`${pathname}?locale=${locale}&status=${status}`);
+function redirectWithStatus(
+  pathname: string,
+  siteKey: string,
+  locale: string,
+  status: "saved" | "error"
+) {
+  redirect(buildAdminPath(pathname, { siteKey, locale, extras: { status } }));
 }
 
-function revalidateAdminAndSite(pathname: string) {
+function revalidateAdminAndSite(pathname: string, siteKey: string, locale: string) {
   revalidatePath(pathname);
-  revalidatePath("/", "layout");
+  const localesToRevalidate = new Set([locale, ...supportedDashboardLocales]);
+
+  for (const nextLocale of localesToRevalidate) {
+    revalidatePath(`/${siteKey}/${nextLocale}`, "layout");
+  }
 }
 
 export async function loginAction(formData: FormData) {
@@ -63,7 +77,7 @@ export async function loginAction(formData: FormData) {
   }
 
   await createAdminSession(admin.id);
-  redirect("/admin");
+  redirect(buildAdminPath("/admin", { siteKey: defaultSiteKey, locale: "en" }));
 }
 
 export async function logoutAction() {
@@ -72,10 +86,12 @@ export async function logoutAction() {
 }
 
 export async function saveGeneralSettingsAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/general");
 
   await upsertSiteSettings({
+    siteKey,
     locale,
     siteName: String(formData.get("siteName") || ""),
     siteTitle: String(formData.get("siteTitle") || ""),
@@ -86,6 +102,7 @@ export async function saveGeneralSettingsAction(formData: FormData) {
   });
 
   await upsertFooterSettings({
+    siteKey,
     locale,
     logoUrl: String(formData.get("footerLogoUrl") || ""),
     phone: String(formData.get("phone") || ""),
@@ -94,7 +111,7 @@ export async function saveGeneralSettingsAction(formData: FormData) {
     copyrightText: String(formData.get("copyrightText") || "")
   });
 
-  await replaceSocialLinks(locale, [
+  await replaceSocialLinks(siteKey, locale, [
     {
       platform: "instagram",
       label: "Instagram",
@@ -112,15 +129,17 @@ export async function saveGeneralSettingsAction(formData: FormData) {
     }
   ]);
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function saveSeoAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/seo");
 
   await upsertSeoSettings({
+    siteKey,
     locale,
     metaTitle: String(formData.get("metaTitle") || ""),
     metaDescription: String(formData.get("metaDescription") || ""),
@@ -130,32 +149,41 @@ export async function saveSeoAction(formData: FormData) {
     canonicalUrl: String(formData.get("canonicalUrl") || "")
   });
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function savePageAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/pages");
   const key = String(formData.get("pageKey") || "");
 
   if (!managedPageKeys.includes(key as (typeof managedPageKeys)[number])) {
-    redirectWithStatus(returnPath, locale, "error");
+    redirectWithStatus(returnPath, siteKey, locale, "error");
   }
 
   await upsertManagedPage({
+    siteKey,
     key: key as (typeof managedPageKeys)[number],
     locale,
     title: String(formData.get("title") || "").trim(),
     content: String(formData.get("content") || "").trim()
   });
 
-  revalidateAdminAndSite(returnPath);
-  revalidatePath(getManagedPagePath(key as (typeof managedPageKeys)[number]));
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  revalidatePath(
+    getManagedPagePublicPath(
+      key as (typeof managedPageKeys)[number],
+      normalizeSiteKey(siteKey),
+      locale
+    )
+  );
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function saveCustomCodesAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/custom-codes");
   const entries = [
@@ -177,18 +205,19 @@ export async function saveCustomCodesAction(formData: FormData) {
 
   for (const entry of entries) {
     if (entry.id > 0) {
-      await updateCustomCode(entry);
+      await updateCustomCode({ ...entry, siteKey });
       continue;
     }
 
-    await createCustomCode(entry);
+    await createCustomCode({ ...entry, siteKey });
   }
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function saveReorderSectionsAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/reorder");
   const sectionCount = Number(formData.get("sectionCount") || 0);
@@ -202,9 +231,9 @@ export async function saveReorderSectionsAction(formData: FormData) {
     });
   }
 
-  await reorderSections(updates, locale);
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  await reorderSections(updates, siteKey, locale);
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 function parseItemIndexes(formData: FormData) {
@@ -239,10 +268,11 @@ function parseFooterNavItems(formData: FormData) {
 }
 
 export async function saveSectionAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin");
   const key = String(formData.get("key") || "");
-  const existingSection = await getSectionByKey(key, locale);
+  const existingSection = await getSectionByKey(key, siteKey, locale);
   const normalizedSectionSettings =
     existingSection?.settings && typeof existingSection.settings === "object"
       ? { ...existingSection.settings }
@@ -413,6 +443,7 @@ export async function saveSectionAction(formData: FormData) {
 
   await updateSection({
     key,
+    siteKey,
     locale,
     name: String(formData.get("name") || existingSection?.name || ""),
     sectionType: existingSection?.sectionType || "",
@@ -468,6 +499,7 @@ export async function saveSectionAction(formData: FormData) {
 
     await upsertSectionItem({
       id: Number(formData.get(`items.${index}.id`) || 0) || undefined,
+      siteKey,
       sectionKey: key,
       locale,
       itemType: String(formData.get(`items.${index}.itemType`) || "default"),
@@ -484,19 +516,21 @@ export async function saveSectionAction(formData: FormData) {
     });
   }
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function addSectionItemAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin");
   const sectionKey = String(formData.get("sectionKey") || formData.get("key") || "");
   const itemType = String(formData.get("itemType") || formData.get("addItemType") || "default");
-  const existingSection = sectionKey ? await getSectionByKey(sectionKey, locale) : null;
+  const existingSection = sectionKey ? await getSectionByKey(sectionKey, siteKey, locale) : null;
   const sortOrder = existingSection?.items.length ?? 0;
 
   await upsertSectionItem({
+    siteKey,
     sectionKey,
     locale,
     itemType,
@@ -512,14 +546,15 @@ export async function addSectionItemAction(formData: FormData) {
     settings: null
   });
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function deleteSectionItemAction(
   itemId: number,
   formData: FormData
 ) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin");
   const id = itemId || Number(formData.get("id") || 0);
@@ -528,34 +563,36 @@ export async function deleteSectionItemAction(
     await deleteSectionItem(id);
   }
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function uploadMediaAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/media");
   const file = formData.get("file");
 
   if (file instanceof File && file.size > 0) {
-    await createMediaAsset(file, String(formData.get("altText") || ""), "library");
+    await createMediaAsset(file, String(formData.get("altText") || ""), "library", siteKey);
   }
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function deleteMediaAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/media");
   const id = Number(formData.get("id") || 0);
 
   if (id > 0) {
-    await deleteMediaAsset(id);
+    await deleteMediaAsset(id, siteKey);
   }
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 const adminSchema = z.object({
@@ -568,6 +605,7 @@ const adminSchema = z.object({
 });
 
 export async function createAdminUserAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/admin-users");
   const payload = adminSchema.parse({
@@ -584,11 +622,12 @@ export async function createAdminUserAction(formData: FormData) {
     password: payload.password || "Admin123!"
   });
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function updateAdminUserAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/admin-users");
   const password = String(formData.get("password") || "").trim();
@@ -607,11 +646,12 @@ export async function updateAdminUserAction(formData: FormData) {
     password: payload.password
   });
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }
 
 export async function deleteAdminUserAction(formData: FormData) {
+  const siteKey = getSiteKey(formData);
   const locale = getLocale(formData);
   const returnPath = getReturnPath(formData, "/admin/admin-users");
   const id = Number(formData.get("id") || 0);
@@ -620,6 +660,6 @@ export async function deleteAdminUserAction(formData: FormData) {
     await deleteAdminUser(id);
   }
 
-  revalidateAdminAndSite(returnPath);
-  redirectWithStatus(returnPath, locale, "saved");
+  revalidateAdminAndSite(returnPath, siteKey, locale);
+  redirectWithStatus(returnPath, siteKey, locale, "saved");
 }

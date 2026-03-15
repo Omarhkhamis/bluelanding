@@ -1,18 +1,20 @@
 import { notFound } from "next/navigation";
 import { savePageAction } from "@/app/admin/actions";
 import { StatusNotice } from "@/components/admin/status-notice";
-import { getManagedPageByKey, getManagedPagePath } from "@/lib/cms";
+import { getManagedPageByKey, getManagedPagePublicPath } from "@/lib/cms";
+import { getSiteLabel, normalizeSiteKey } from "@/lib/sites";
 
 export default async function AdminPageEditorPage({
   params,
   searchParams
 }: {
   params: Promise<{ pageKey: string }>;
-  searchParams: Promise<{ locale?: string; status?: string }>;
+  searchParams: Promise<{ locale?: string; site?: string; status?: string }>;
 }) {
   const { pageKey } = await params;
-  const { locale = "en", status } = await searchParams;
-  const page = await getManagedPageByKey(pageKey, locale);
+  const { locale = "en", site, status } = await searchParams;
+  const siteKey = normalizeSiteKey(site);
+  const page = await getManagedPageByKey(pageKey, siteKey, locale);
 
   if (!page) {
     notFound();
@@ -25,8 +27,8 @@ export default async function AdminPageEditorPage({
           <div className="admin-eyebrow">Page Editor</div>
           <h1 className="admin-page-title">{page.title}</h1>
           <p className="admin-help">
-            Editing <strong>{getManagedPagePath(page.key)}</strong> for locale{" "}
-            {locale.toUpperCase()}.
+            Editing <strong>{getManagedPagePublicPath(page.key, siteKey, locale)}</strong> for{" "}
+            {getSiteLabel(siteKey)} / {locale.toUpperCase()}.
           </p>
         </div>
       </div>
@@ -34,6 +36,7 @@ export default async function AdminPageEditorPage({
       <StatusNotice status={status} />
 
       <form action={savePageAction} className="admin-form">
+        <input type="hidden" name="site" value={siteKey} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="returnPath" value={`/admin/pages/${page.key}`} />
         <input type="hidden" name="pageKey" value={page.key} />

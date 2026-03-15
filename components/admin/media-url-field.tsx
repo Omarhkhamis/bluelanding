@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { FolderOpen, Upload, X } from "lucide-react";
 
 type MediaAsset = {
@@ -26,6 +27,7 @@ export function MediaUrlField({
   placeholder,
   mediaType = "image"
 }: MediaUrlFieldProps) {
+  const searchParams = useSearchParams();
   const [value, setValue] = useState(defaultValue);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [assets, setAssets] = useState<MediaAsset[]>([]);
@@ -38,6 +40,8 @@ export function MediaUrlField({
     mediaType === "video" ? "video/*" : mediaType === "all" ? "image/*,video/*" : "image/*";
   const mediaLabel =
     mediaType === "video" ? "video" : mediaType === "all" ? "media" : "image";
+  const siteKey = searchParams.get("site") || "hollywood-smile";
+  const mediaEndpoint = `/api/admin/media?site=${encodeURIComponent(siteKey)}`;
   const filteredAssets = assets.filter((asset) => {
     if (mediaType === "video") {
       return asset.mimeType.startsWith("video/");
@@ -54,7 +58,7 @@ export function MediaUrlField({
     setIsLoadingAssets(true);
 
     try {
-      const response = await fetch("/api/admin/media", { cache: "no-store" });
+      const response = await fetch(mediaEndpoint, { cache: "no-store" });
       const payload = await response.json();
       setAssets(Array.isArray(payload.assets) ? payload.assets : []);
     } finally {
@@ -114,9 +118,10 @@ export function MediaUrlField({
           setIsUploading(true);
           const body = new FormData();
           body.append("file", file);
+          body.append("site", siteKey);
 
           try {
-            const response = await fetch("/api/admin/media", {
+            const response = await fetch(mediaEndpoint, {
               method: "POST",
               body
             });

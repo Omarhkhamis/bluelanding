@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { getFooterNavItems } from "@/lib/footer-nav";
+import { getSitePagePath, type SiteKey } from "@/lib/sites";
 import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 import type { FooterSettings, Section } from "@/lib/cms";
 
@@ -15,15 +16,22 @@ const socialIconMap: Record<string, string> = {
 };
 
 type FooterLpbmProps = {
+  siteKey: SiteKey;
+  basePath: string;
   footer: FooterSettings;
   footerSection: Section | null;
   whatsappUrl: string;
 };
 
-export function FooterLpbm({ footer, footerSection, whatsappUrl }: FooterLpbmProps) {
+export function FooterLpbm({
+  siteKey,
+  basePath,
+  footer,
+  footerSection,
+  whatsappUrl
+}: FooterLpbmProps) {
   const settings = (footerSection?.settings || {}) as Record<string, unknown>;
   const socialLinks = footer.socialLinks.filter((link) => link.url && link.url.trim());
-  const pageSuffix = footer.locale === "ru" ? "?locale=ru" : "";
   const footerLogoUrl = footerSection?.imageUrl || footer.logoUrl;
   const links = getFooterNavItems(settings);
 
@@ -73,7 +81,15 @@ export function FooterLpbm({ footer, footerSection, whatsappUrl }: FooterLpbmPro
 
         <div className="lpbm-footer__links">
           {links.map((link, index) => (
-            <a key={`${link.href}-${index}`} href={link.href || "#"} className="lpbm-footer__link">
+            <a
+              key={`${link.href}-${index}`}
+              href={
+                link.href?.startsWith("#")
+                  ? `${basePath}${link.href}`
+                  : link.href || "#"
+              }
+              className="lpbm-footer__link"
+            >
               {link.label}
             </a>
           ))}
@@ -117,11 +133,11 @@ export function FooterLpbm({ footer, footerSection, whatsappUrl }: FooterLpbmPro
       <div className="container-dental lpbm-footer__bottom">
         <p>{footer.copyrightText}</p>
         <div className="lpbm-footer__legal">
-          <Link href={`/privacy-policy${pageSuffix}`}>
+          <Link href={getSitePagePath(siteKey, footer.locale, "privacy-policy")}>
             {String(settings.privacy || "Privacy Policy")}
           </Link>
           <span>|</span>
-          <Link href={`/terms${pageSuffix}`}>
+          <Link href={getSitePagePath(siteKey, footer.locale, "terms")}>
             {String(settings.terms || "Terms")}
           </Link>
         </div>

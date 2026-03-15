@@ -2,16 +2,18 @@ import { saveGeneralSettingsAction } from "@/app/admin/actions";
 import { MediaUrlField } from "@/components/admin/media-url-field";
 import { StatusNotice } from "@/components/admin/status-notice";
 import { getFooterSettings, getSiteSettings } from "@/lib/cms";
+import { normalizeSiteKey } from "@/lib/sites";
 
 export default async function AdminGeneralPage({
   searchParams
 }: {
-  searchParams: Promise<{ locale?: string; status?: string }>;
+  searchParams: Promise<{ locale?: string; site?: string; status?: string }>;
 }) {
-  const { locale = "en", status } = await searchParams;
+  const { locale = "en", site: siteParam, status } = await searchParams;
+  const siteKey = normalizeSiteKey(siteParam);
   const [site, footer] = await Promise.all([
-    getSiteSettings(locale),
-    getFooterSettings(locale)
+    getSiteSettings(siteKey, locale),
+    getFooterSettings(siteKey, locale)
   ]);
 
   const instagram = footer.socialLinks.find((item) => item.platform === "instagram")?.url || "";
@@ -31,6 +33,7 @@ export default async function AdminGeneralPage({
       <StatusNotice status={status} />
 
       <form action={saveGeneralSettingsAction} className="admin-form">
+        <input type="hidden" name="site" value={siteKey} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="returnPath" value="/admin/general" />
 

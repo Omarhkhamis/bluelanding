@@ -1,13 +1,15 @@
 import { StatusNotice } from "@/components/admin/status-notice";
 import { getSections } from "@/lib/cms";
+import { getSiteLabel, normalizeSiteKey } from "@/lib/sites";
 
 export default async function AdminOverviewPage({
   searchParams
 }: {
-  searchParams: Promise<{ locale?: string; status?: string }>;
+  searchParams: Promise<{ locale?: string; site?: string; status?: string }>;
 }) {
-  const { locale = "en", status } = await searchParams;
-  const sections = await getSections(locale);
+  const { locale = "en", site, status } = await searchParams;
+  const siteKey = normalizeSiteKey(site);
+  const sections = await getSections(siteKey, locale);
 
   return (
     <>
@@ -19,7 +21,10 @@ export default async function AdminOverviewPage({
             Internal content status for the active locale.
           </p>
         </div>
-        <span className="admin-pill">{locale.toUpperCase()}</span>
+        <div className="flex gap-2">
+          <span className="admin-pill">{getSiteLabel(siteKey)}</span>
+          <span className="admin-pill">{locale.toUpperCase()}</span>
+        </div>
       </div>
 
       <StatusNotice status={status} />

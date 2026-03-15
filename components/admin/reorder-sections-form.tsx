@@ -11,6 +11,7 @@ type ReorderSection = {
 };
 
 type ReorderSectionsFormProps = {
+  siteKey: string;
   locale: string;
   sections: ReorderSection[];
 };
@@ -22,12 +23,13 @@ function moveItem<T>(items: T[], from: number, to: number) {
   return next;
 }
 
-export function ReorderSectionsForm({ locale, sections }: ReorderSectionsFormProps) {
+export function ReorderSectionsForm({ siteKey, locale, sections }: ReorderSectionsFormProps) {
   const [items, setItems] = useState(sections);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   return (
     <form action={saveReorderSectionsAction} className="admin-card admin-form">
+      <input type="hidden" name="site" value={siteKey} />
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="returnPath" value="/admin/reorder" />
       <input type="hidden" name="sectionCount" value={items.length} />

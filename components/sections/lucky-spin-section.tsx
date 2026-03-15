@@ -9,6 +9,7 @@ import {
   submitFormPayload,
   validateFormPayload
 } from "@/lib/form-submit";
+import { extractSiteLocaleFromPathname, getSitePagePath } from "@/lib/sites";
 
 type LuckySpinSectionProps = {
   section: Section;
@@ -215,7 +216,13 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
 
       if (typeof window !== "undefined") {
         window.setTimeout(() => {
-          window.location.assign(String(submitResult.thankYouUrl || "/thankyou"));
+          const routeContext = extractSiteLocaleFromPathname(window.location.pathname);
+          window.location.assign(
+            String(
+              submitResult.thankYouUrl ||
+                getSitePagePath(routeContext.siteKey, routeContext.locale, "thankyou")
+            )
+          );
         }, 900);
       }
     }, 3600);

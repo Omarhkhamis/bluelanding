@@ -2,14 +2,16 @@ import { deleteMediaAction, uploadMediaAction } from "@/app/admin/actions";
 import { CopyAssetButton } from "@/components/admin/copy-asset-button";
 import { StatusNotice } from "@/components/admin/status-notice";
 import { getMediaAssets } from "@/lib/cms";
+import { normalizeSiteKey } from "@/lib/sites";
 
 export default async function AdminMediaPage({
   searchParams
 }: {
-  searchParams: Promise<{ locale?: string; status?: string }>;
+  searchParams: Promise<{ locale?: string; site?: string; status?: string }>;
 }) {
-  const { locale = "en", status } = await searchParams;
-  const mediaAssets = await getMediaAssets();
+  const { locale = "en", site, status } = await searchParams;
+  const siteKey = normalizeSiteKey(site);
+  const mediaAssets = await getMediaAssets(siteKey);
 
   return (
     <>
@@ -26,6 +28,7 @@ export default async function AdminMediaPage({
       <StatusNotice status={status} />
 
       <form action={uploadMediaAction} className="admin-card admin-form">
+        <input type="hidden" name="site" value={siteKey} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="returnPath" value="/admin/media" />
         <div className="admin-form-grid">
@@ -64,6 +67,7 @@ export default async function AdminMediaPage({
               <div className="admin-actions">
                 <CopyAssetButton url={asset.url} />
                 <form action={deleteMediaAction}>
+                  <input type="hidden" name="site" value={siteKey} />
                   <input type="hidden" name="locale" value={locale} />
                   <input type="hidden" name="returnPath" value="/admin/media" />
                   <input type="hidden" name="id" value={asset.id} />

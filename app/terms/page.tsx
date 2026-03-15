@@ -1,24 +1,11 @@
-import { notFound } from "next/navigation";
-import { ManagedPageShell } from "@/components/managed-page-shell";
-import { getManagedPageByKey } from "@/lib/cms";
+import { redirect } from "next/navigation";
+import { defaultSiteKey, getSitePagePath, normalizeLocaleSegment } from "@/lib/sites";
 
-export default async function TermsPage({
+export default async function LegacyTermsPage({
   searchParams
 }: {
   searchParams: Promise<{ locale?: string }>;
 }) {
-  const { locale = "en" } = await searchParams;
-  const page = await getManagedPageByKey("terms", locale);
-
-  if (!page) {
-    notFound();
-  }
-
-  return (
-    <ManagedPageShell
-      locale={locale}
-      title={page.title}
-      content={page.content}
-    />
-  );
+  const { locale } = await searchParams;
+  redirect(getSitePagePath(defaultSiteKey, normalizeLocaleSegment(locale), "terms"));
 }

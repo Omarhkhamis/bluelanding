@@ -9,6 +9,7 @@ import type { FooterSettings, Section } from "@/lib/cms";
 type SiteHeaderProps = {
   logoUrl: string;
   siteName: string;
+  homeHref: string;
   navLinks: Array<{
     href: string;
     label: string;
@@ -21,6 +22,7 @@ type SiteHeaderProps = {
 export function SiteHeader({
   logoUrl,
   siteName,
+  homeHref,
   navLinks,
   footer,
   whatsappUrl,
@@ -28,13 +30,14 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   if (section?.key === "header-2") {
     return (
-      <HeaderLpbm
-        logoUrl={logoUrl}
-        siteName={siteName}
-        footer={footer}
-        whatsappUrl={whatsappUrl}
-        section={section}
-      />
+        <HeaderLpbm
+          logoUrl={logoUrl}
+          siteName={siteName}
+          homeHref={homeHref}
+          footer={footer}
+          whatsappUrl={whatsappUrl}
+          section={section}
+        />
     );
   }
 
@@ -45,7 +48,7 @@ export function SiteHeader({
       <div className="container-dental">
         <div className="relative flex h-16 items-center justify-center lg:h-24 lg:justify-between">
           <Link
-            href="/"
+            href={homeHref}
             className="flex items-center -translate-x-2 lg:translate-x-0"
           >
             <Image

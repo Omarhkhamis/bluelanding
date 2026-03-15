@@ -1,6 +1,9 @@
+import { defaultSiteKey, normalizeSiteKey, type SiteKey } from "@/lib/sites";
+
 export type DataLeadsOrder = "newest" | "oldest";
 
 export type DataLeadsFilters = {
+  siteKey: SiteKey;
   locale: string;
   order: DataLeadsOrder;
   month: string;
@@ -29,10 +32,12 @@ export function normalizeDataLeadsFilters(
   source: FilterSource,
   defaultLocale = "en"
 ): DataLeadsFilters {
+  const siteKey = normalizeSiteKey(readValue(source, "site") || defaultSiteKey);
   const locale = readValue(source, "locale") || defaultLocale;
   const order = readValue(source, "order") === "oldest" ? "oldest" : "newest";
 
   return {
+    siteKey,
     locale,
     order,
     month: readValue(source, "month"),
@@ -43,6 +48,10 @@ export function normalizeDataLeadsFilters(
 
 export function buildDataLeadsQueryString(filters: Partial<DataLeadsFilters>) {
   const params = new URLSearchParams();
+
+  if (filters.siteKey) {
+    params.set("site", filters.siteKey);
+  }
 
   if (filters.locale) {
     params.set("locale", filters.locale);

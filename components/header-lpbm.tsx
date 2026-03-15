@@ -17,6 +17,7 @@ const socialIconMap: Record<string, string> = {
 type HeaderLpbmProps = {
   logoUrl: string;
   siteName: string;
+  homeHref: string;
   footer: FooterSettings;
   whatsappUrl: string;
   section: Section;
@@ -25,6 +26,7 @@ type HeaderLpbmProps = {
 export function HeaderLpbm({
   logoUrl,
   siteName,
+  homeHref,
   footer,
   whatsappUrl,
   section
@@ -41,7 +43,7 @@ export function HeaderLpbm({
     <header className="lpbm-header">
       <div className="lpbm-header__inner container-dental">
         <div className="lpbm-header__brand">
-          <Link href="/" className="lpbm-header__logo">
+          <Link href={homeHref} className="lpbm-header__logo">
             <img src={logoUrl} alt={siteName} className="lpbm-header__logo-image" />
           </Link>
         </div>

@@ -2,14 +2,16 @@ import { saveSeoAction } from "@/app/admin/actions";
 import { MediaUrlField } from "@/components/admin/media-url-field";
 import { StatusNotice } from "@/components/admin/status-notice";
 import { getSeoSettings } from "@/lib/cms";
+import { normalizeSiteKey } from "@/lib/sites";
 
 export default async function AdminSeoPage({
   searchParams
 }: {
-  searchParams: Promise<{ locale?: string; status?: string }>;
+  searchParams: Promise<{ locale?: string; site?: string; status?: string }>;
 }) {
-  const { locale = "en", status } = await searchParams;
-  const seo = await getSeoSettings(locale);
+  const { locale = "en", site, status } = await searchParams;
+  const siteKey = normalizeSiteKey(site);
+  const seo = await getSeoSettings(siteKey, locale);
 
   return (
     <>
@@ -26,6 +28,7 @@ export default async function AdminSeoPage({
       <StatusNotice status={status} />
 
       <form action={saveSeoAction} className="admin-card admin-form">
+        <input type="hidden" name="site" value={siteKey} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="returnPath" value="/admin/seo" />
 

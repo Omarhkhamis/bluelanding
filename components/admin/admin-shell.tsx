@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Swal from "sweetalert2";
 import { logoutAction } from "@/app/admin/actions";
+import { buildAdminPath, getSiteLabel, supportedSiteKeys } from "@/lib/sites";
 
 type SectionLink = {
   key: string;
@@ -23,8 +24,8 @@ type AdminShellProps = {
 const SCROLL_KEY = "bm-admin-scroll-y";
 const TOAST_KEY = "bm-admin-toast-status";
 
-function buildHref(pathname: string, locale: string) {
-  return `${pathname}?locale=${locale}`;
+function buildHref(pathname: string, siteKey: string, locale: string) {
+  return buildAdminPath(pathname, { siteKey, locale });
 }
 
 function NavLink({
@@ -47,8 +48,13 @@ function NavLink({
 }
 
 export function AdminShell({ currentUser, sections, children }: AdminShellProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const rawSiteKey = searchParams.get("site") || "hollywood-smile";
+  const siteKey = supportedSiteKeys.includes(rawSiteKey as (typeof supportedSiteKeys)[number])
+    ? rawSiteKey
+    : "hollywood-smile";
   const locale = searchParams.get("locale") || "en";
   const status = searchParams.get("status") || "";
 
@@ -188,12 +194,29 @@ export function AdminShell({ currentUser, sections, children }: AdminShellProps)
           </div>
 
           <div>
+            <div className="admin-sidebar-label">Site</div>
+            <select
+              className="admin-select"
+              value={siteKey}
+              onChange={(event) => {
+                router.push(buildHref(pathname, event.target.value, locale));
+              }}
+            >
+              {supportedSiteKeys.map((code) => (
+                <option key={code} value={code}>
+                  {getSiteLabel(code)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <div className="admin-sidebar-label">Locale</div>
             <div className="admin-locale-row">
               {["en", "ru"].map((code) => (
                 <Link
                   key={code}
-                  href={buildHref(pathname, code)}
+                  href={buildHref(pathname, siteKey, code)}
                   className={`admin-locale-link ${
                     locale === code ? "admin-locale-link-active" : ""
                   }`}
@@ -210,7 +233,7 @@ export function AdminShell({ currentUser, sections, children }: AdminShellProps)
               {sections.map((section) => (
                 <NavLink
                   key={section.key}
-                  href={buildHref(`/admin/sections/${section.key}`, locale)}
+                  href={buildHref(`/admin/sections/${section.key}`, siteKey, locale)}
                   isActive={pathname === `/admin/sections/${section.key}`}
                   label={section.name}
                 />
@@ -222,12 +245,12 @@ export function AdminShell({ currentUser, sections, children }: AdminShellProps)
             <summary>Data - Leads</summary>
             <div className="admin-nav-list">
               <NavLink
-                href={buildHref("/admin/form-data", locale)}
+                href={buildHref("/admin/form-data", siteKey, locale)}
                 isActive={pathname === "/admin/form-data"}
                 label="Form Data"
               />
               <NavLink
-                href={buildHref("/admin/spin-data", locale)}
+                href={buildHref("/admin/spin-data", siteKey, locale)}
                 isActive={pathname === "/admin/spin-data"}
                 label="Spin Data"
               />
@@ -238,42 +261,42 @@ export function AdminShell({ currentUser, sections, children }: AdminShellProps)
             <summary>Settings</summary>
             <div className="admin-nav-list">
               <NavLink
-                href={buildHref("/admin/overview", locale)}
+                href={buildHref("/admin/overview", siteKey, locale)}
                 isActive={pathname === "/admin/overview" || pathname === "/admin"}
                 label="Overview"
               />
               <NavLink
-                href={buildHref("/admin/general", locale)}
+                href={buildHref("/admin/general", siteKey, locale)}
                 isActive={pathname === "/admin/general"}
                 label="General"
               />
               <NavLink
-                href={buildHref("/admin/reorder", locale)}
+                href={buildHref("/admin/reorder", siteKey, locale)}
                 isActive={pathname === "/admin/reorder"}
                 label="Reorder Sections"
               />
               <NavLink
-                href={buildHref("/admin/custom-codes", locale)}
+                href={buildHref("/admin/custom-codes", siteKey, locale)}
                 isActive={pathname === "/admin/custom-codes"}
                 label="Custom Codes"
               />
               <NavLink
-                href={buildHref("/admin/seo", locale)}
+                href={buildHref("/admin/seo", siteKey, locale)}
                 isActive={pathname === "/admin/seo"}
                 label="SEO"
               />
               <NavLink
-                href={buildHref("/admin/media", locale)}
+                href={buildHref("/admin/media", siteKey, locale)}
                 isActive={pathname === "/admin/media"}
                 label="Media"
               />
               <NavLink
-                href={buildHref("/admin/pages", locale)}
+                href={buildHref("/admin/pages", siteKey, locale)}
                 isActive={pathname === "/admin/pages" || pathname.startsWith("/admin/pages/")}
                 label="Pages"
               />
               <NavLink
-                href={buildHref("/admin/admin-users", locale)}
+                href={buildHref("/admin/admin-users", siteKey, locale)}
                 isActive={pathname === "/admin/admin-users"}
                 label="Admin Users"
               />

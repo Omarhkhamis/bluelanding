@@ -1,5 +1,11 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { createFormSubmission, createSpinSubmission, getSiteSettings } from "@/lib/cms";
+import {
+  extractSiteLocaleFromPathname,
+  getSitePagePath,
+  normalizeLocaleSegment,
+  normalizeSiteKey
+} from "@/lib/sites";
 import { buildWhatsAppApiUrl } from "@/lib/whatsapp";
 
 function asString(value: unknown) {
@@ -87,6 +93,15 @@ function buildWhatsAppRedirect(baseLink: string, fields: Record<string, string>)
   return buildWhatsAppApiUrl(baseLink, lines.join("\n"));
 }
 
+function resolveSiteContext(fields: Record<string, string>) {
+  const pathContext = extractSiteLocaleFromPathname(String(fields.page || ""));
+
+  return {
+    siteKey: normalizeSiteKey(fields.site || pathContext.siteKey),
+    locale: normalizeLocaleSegment(fields.locale || pathContext.locale)
+  };
+}
+
 export async function POST(request: Request) {
   let payload: Record<string, unknown> = {};
 
@@ -97,9 +112,13 @@ export async function POST(request: Request) {
   }
 
   const cleaned = sanitizePayload(payload);
+  const { siteKey, locale } = resolveSiteContext(cleaned);
 
   if (cleaned.company) {
-    return Response.json({ ok: true, thankYouUrl: "/thankyou" });
+    return Response.json({
+      ok: true,
+      thankYouUrl: getSitePagePath(siteKey, locale, "thankyou")
+    });
   }
 
   const fullName = pickFirstFilled(cleaned, ["fullName", "name"]);
@@ -107,7 +126,6 @@ export async function POST(request: Request) {
   const email = pickFirstFilled(cleaned, ["email"]);
   const message = pickFirstFilled(cleaned, ["message", "notes", "details"]);
   const prize = pickFirstFilled(cleaned, ["prize", "spinPrize"]);
-  const locale = cleaned.locale === "ru" ? "ru" : "en";
   const source = cleaned.source || "website";
   const submittedAt = new Date().toISOString();
   const isSpin = source === "lucky-spin" || Boolean(prize);
@@ -137,6 +155,7 @@ export async function POST(request: Request) {
 
   if (isSpin) {
     await createSpinSubmission({
+      siteKey,
       locale,
       source,
       page: cleaned.page || "",
@@ -147,6 +166,7 @@ export async function POST(request: Request) {
     });
   } else {
     await createFormSubmission({
+      siteKey,
       locale,
       source,
       formName: cleaned.formName || "",
@@ -162,7 +182,7 @@ export async function POST(request: Request) {
   let siteWhatsappUrl = "";
 
   try {
-    const siteSettings = await getSiteSettings(locale);
+    const siteSettings = await getSiteSettings(siteKey, locale);
     siteWhatsappUrl = siteSettings.whatsappUrl || "";
   } catch {
     siteWhatsappUrl = "";
@@ -173,6 +193,6 @@ export async function POST(request: Request) {
   return Response.json({
     ok: true,
     redirectTo,
-    thankYouUrl: `/thankyou?locale=${locale}`
+    thankYouUrl: getSitePagePath(siteKey, locale, "thankyou")
   });
 }

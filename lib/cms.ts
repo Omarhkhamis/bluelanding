@@ -29,6 +29,14 @@ import {
   whatsappUrl,
   whyChooseItems
 } from "@/lib/site-data";
+import {
+  defaultSiteKey,
+  normalizeLocaleSegment,
+  normalizeSiteKey,
+  parseSiteKey,
+  supportedSiteKeys,
+  type SiteKey
+} from "@/lib/sites";
 import { getSafeWhatsAppUrl } from "@/lib/whatsapp";
 
 const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -40,6 +48,7 @@ if (!fs.existsSync(uploadsDir)) {
 type JsonValue = Record<string, unknown> | Array<unknown> | null;
 
 export type SiteSettings = {
+  siteKey: SiteKey;
   locale: string;
   siteName: string;
   siteTitle: string;
@@ -58,6 +67,7 @@ export type SocialLink = {
 };
 
 export type FooterSettings = {
+  siteKey: SiteKey;
   locale: string;
   logoUrl: string;
   phone: string;
@@ -68,6 +78,7 @@ export type FooterSettings = {
 };
 
 export type SeoSettings = {
+  siteKey: SiteKey;
   locale: string;
   metaTitle: string;
   metaDescription: string;
@@ -79,6 +90,7 @@ export type SeoSettings = {
 
 export type CustomCode = {
   id: number;
+  siteKey: SiteKey;
   name: string;
   placement: string;
   code: string;
@@ -104,6 +116,7 @@ export type SectionItem = {
 export type Section = {
   id: number;
   key: string;
+  siteKey: SiteKey;
   locale: string;
   name: string;
   sectionType: string;
@@ -121,6 +134,7 @@ export type Section = {
 
 export type MediaAsset = {
   id: number;
+  siteKey: SiteKey;
   fileName: string;
   originalName: string;
   url: string;
@@ -142,6 +156,7 @@ export type AdminUser = {
 
 export type FormSubmission = {
   id: number;
+  siteKey: SiteKey;
   locale: string;
   source: string;
   formName: string;
@@ -156,6 +171,7 @@ export type FormSubmission = {
 
 export type SpinSubmission = {
   id: string;
+  siteKey: SiteKey;
   locale: string;
   source: string;
   page: string;
@@ -167,6 +183,7 @@ export type SpinSubmission = {
 };
 
 type SubmissionQueryOptions = {
+  siteKey?: string;
   locale?: string;
   order?: "asc" | "desc" | "newest" | "oldest";
   month?: string;
@@ -182,6 +199,7 @@ export type ManagedPageKey = (typeof managedPageKeys)[number];
 export type ManagedPage = {
   id: number;
   key: ManagedPageKey;
+  siteKey: SiteKey;
   locale: string;
   title: string;
   content: string;
@@ -436,15 +454,21 @@ function getExtendedSectionSeeds(): SeedSection[] {
   ];
 }
 
-async function insertSeedSection(client: PoolClient, locale: string, section: SeedSection) {
+async function insertSeedSection(
+  client: PoolClient,
+  siteKey: SiteKey,
+  locale: string,
+  section: SeedSection
+) {
   await client.query(
     `
       INSERT INTO sections (
-        section_key, locale, name, section_type, sort_order, is_active, heading, subheading,
-        description, button_label, button_url, image_url, settings_json
-      ) VALUES ($1, $2, $3, $4, $5, TRUE, $6, $7, $8, $9, $10, $11, $12::jsonb)
+        site_key, section_key, locale, name, section_type, sort_order, is_active, heading,
+        subheading, description, button_label, button_url, image_url, settings_json
+      ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8, $9, $10, $11, $12, $13::jsonb)
     `,
     [
+      siteKey,
       section.key,
       locale,
       section.name,
@@ -464,11 +488,12 @@ async function insertSeedSection(client: PoolClient, locale: string, section: Se
     await client.query(
       `
         INSERT INTO section_items (
-          section_key, locale, item_type, title, subtitle, description, image_url,
+          site_key, section_key, locale, item_type, title, subtitle, description, image_url,
           video_url, link_url, alt_text, sort_order, is_active, settings_json
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE, $12::jsonb)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13::jsonb)
       `,
       [
+        siteKey,
         section.key,
         locale,
         item.itemType,
@@ -540,6 +565,24 @@ function getLegacyHeroNavLinks(settings: unknown) {
   );
 }
 
+function normalizeCmsLocale(locale?: string | null) {
+  return normalizeLocaleSegment(locale || "en");
+}
+
+function normalizeSiteLocaleArgs(siteOrLocale?: string, maybeLocale?: string) {
+  if (maybeLocale !== undefined || parseSiteKey(siteOrLocale)) {
+    return {
+      siteKey: normalizeSiteKey(siteOrLocale),
+      locale: normalizeCmsLocale(maybeLocale)
+    };
+  }
+
+  return {
+    siteKey: defaultSiteKey,
+    locale: normalizeCmsLocale(siteOrLocale)
+  };
+}
+
 function normalizeManagedLocale(locale?: string): DashboardLocale {
   return supportedDashboardLocales.includes(locale as DashboardLocale)
     ? (locale as DashboardLocale)
@@ -555,20 +598,29 @@ function getManagedPageDefault(
 }
 
 export function getManagedPagePath(key: ManagedPageKey) {
-  return key === "thankyou" ? "/thankyou" : `/${key}`;
+  return key === "thankyou" ? "thankyou" : key;
 }
 
-async function backfillDefaultPages() {
+export function getManagedPagePublicPath(
+  key: ManagedPageKey,
+  siteKey = defaultSiteKey,
+  locale = "en"
+) {
+  const pagePath = getManagedPagePath(key);
+  return `/${siteKey}/${normalizeCmsLocale(locale)}/${pagePath}`;
+}
+
+async function backfillDefaultPages(siteKey = defaultSiteKey) {
   for (const key of managedPageKeys) {
     for (const locale of supportedDashboardLocales) {
       const page = getManagedPageDefault(key, locale);
       await pool.query(
         `
-          INSERT INTO pages (page_key, locale, title, content, updated_at)
-          VALUES ($1, $2, $3, $4, NOW())
-          ON CONFLICT (page_key, locale) DO NOTHING
+          INSERT INTO pages (site_key, page_key, locale, title, content, updated_at)
+          VALUES ($1, $2, $3, $4, $5, NOW())
+          ON CONFLICT (site_key, page_key, locale) DO NOTHING
         `,
-        [key, locale, page.title, page.content]
+        [siteKey, key, locale, page.title, page.content]
       );
     }
   }
@@ -605,7 +657,8 @@ async function initCms() {
         );
 
         CREATE TABLE IF NOT EXISTS site_settings (
-          locale TEXT PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
+          locale TEXT NOT NULL DEFAULT 'en',
           site_name TEXT NOT NULL,
           site_title TEXT NOT NULL,
           site_description TEXT,
@@ -616,7 +669,8 @@ async function initCms() {
         );
 
         CREATE TABLE IF NOT EXISTS footer_settings (
-          locale TEXT PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
+          locale TEXT NOT NULL DEFAULT 'en',
           logo_url TEXT,
           phone TEXT,
           email TEXT,
@@ -627,6 +681,7 @@ async function initCms() {
 
         CREATE TABLE IF NOT EXISTS social_links (
           id SERIAL PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
           locale TEXT NOT NULL,
           platform TEXT NOT NULL,
           label TEXT NOT NULL,
@@ -635,7 +690,8 @@ async function initCms() {
         );
 
         CREATE TABLE IF NOT EXISTS seo_settings (
-          locale TEXT PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
+          locale TEXT NOT NULL DEFAULT 'en',
           meta_title TEXT,
           meta_description TEXT,
           meta_keywords TEXT,
@@ -647,6 +703,7 @@ async function initCms() {
 
         CREATE TABLE IF NOT EXISTS custom_codes (
           id SERIAL PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
           name TEXT NOT NULL,
           placement TEXT NOT NULL,
           code TEXT NOT NULL,
@@ -656,6 +713,7 @@ async function initCms() {
 
         CREATE TABLE IF NOT EXISTS sections (
           id SERIAL PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
           section_key TEXT NOT NULL,
           locale TEXT NOT NULL DEFAULT 'en',
           name TEXT NOT NULL,
@@ -674,6 +732,7 @@ async function initCms() {
 
         CREATE TABLE IF NOT EXISTS section_items (
           id SERIAL PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
           section_key TEXT NOT NULL,
           locale TEXT NOT NULL DEFAULT 'en',
           item_type TEXT NOT NULL DEFAULT 'default',
@@ -692,7 +751,8 @@ async function initCms() {
 
         CREATE TABLE IF NOT EXISTS media_assets (
           id SERIAL PRIMARY KEY,
-          file_name TEXT NOT NULL UNIQUE,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
+          file_name TEXT NOT NULL,
           original_name TEXT NOT NULL,
           url TEXT NOT NULL,
           mime_type TEXT NOT NULL,
@@ -716,6 +776,7 @@ async function initCms() {
 
         CREATE TABLE IF NOT EXISTS form_submissions (
           id SERIAL PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
           locale TEXT NOT NULL DEFAULT 'en',
           source TEXT NOT NULL DEFAULT 'website',
           form_name TEXT,
@@ -730,6 +791,7 @@ async function initCms() {
 
         CREATE TABLE IF NOT EXISTS spin_submissions (
           id SERIAL PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
           locale TEXT NOT NULL DEFAULT 'en',
           source TEXT NOT NULL DEFAULT 'lucky-spin',
           page TEXT,
@@ -742,6 +804,7 @@ async function initCms() {
 
         CREATE TABLE IF NOT EXISTS pages (
           id SERIAL PRIMARY KEY,
+          site_key TEXT NOT NULL DEFAULT 'hollywood-smile',
           page_key TEXT NOT NULL,
           locale TEXT NOT NULL DEFAULT 'en',
           title TEXT NOT NULL,
@@ -751,22 +814,55 @@ async function initCms() {
       `);
 
       await pool.query(`
+        ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE footer_settings ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE social_links ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE seo_settings ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE custom_codes ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE sections ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE section_items ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE form_submissions ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE spin_submissions ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+        ALTER TABLE pages ADD COLUMN IF NOT EXISTS site_key TEXT NOT NULL DEFAULT 'hollywood-smile';
+
+        ALTER TABLE site_settings DROP CONSTRAINT IF EXISTS site_settings_pkey;
+        ALTER TABLE footer_settings DROP CONSTRAINT IF EXISTS footer_settings_pkey;
+        ALTER TABLE seo_settings DROP CONSTRAINT IF EXISTS seo_settings_pkey;
+        ALTER TABLE media_assets DROP CONSTRAINT IF EXISTS media_assets_file_name_key;
         ALTER TABLE sections DROP CONSTRAINT IF EXISTS sections_section_key_key;
-        CREATE UNIQUE INDEX IF NOT EXISTS sections_section_key_locale_idx
-        ON sections (section_key, locale);
-        CREATE UNIQUE INDEX IF NOT EXISTS pages_page_key_locale_idx
-        ON pages (page_key, locale);
+        DROP INDEX IF EXISTS sections_section_key_locale_idx;
+        DROP INDEX IF EXISTS pages_page_key_locale_idx;
+        CREATE UNIQUE INDEX IF NOT EXISTS site_settings_site_locale_idx
+        ON site_settings (site_key, locale);
+        CREATE UNIQUE INDEX IF NOT EXISTS footer_settings_site_locale_idx
+        ON footer_settings (site_key, locale);
+        CREATE UNIQUE INDEX IF NOT EXISTS seo_settings_site_locale_idx
+        ON seo_settings (site_key, locale);
+        CREATE UNIQUE INDEX IF NOT EXISTS media_assets_site_file_name_idx
+        ON media_assets (site_key, file_name);
+        CREATE UNIQUE INDEX IF NOT EXISTS sections_site_section_key_locale_idx
+        ON sections (site_key, section_key, locale);
+        CREATE UNIQUE INDEX IF NOT EXISTS pages_site_page_key_locale_idx
+        ON pages (site_key, page_key, locale);
       `);
 
       const existingSite = await pool.query(
-        "SELECT locale FROM site_settings WHERE locale = 'en' LIMIT 1"
+        "SELECT locale FROM site_settings WHERE site_key = $1 AND locale = 'en' LIMIT 1",
+        [defaultSiteKey]
       );
 
       if (!existingSite.rowCount) {
         await seedCms();
       }
 
-      await backfillDefaultPages();
+      for (const siteKey of supportedSiteKeys) {
+        if (siteKey !== defaultSiteKey) {
+          await ensureSiteBaseContent(siteKey);
+        }
+
+        await backfillDefaultPages(siteKey);
+      }
     })();
   }
 
@@ -787,10 +883,11 @@ async function seedCms() {
     await client.query(
       `
         INSERT INTO site_settings (
-          locale, site_name, site_title, site_description, logo_url, favicon_url, whatsapp_url
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          site_key, locale, site_name, site_title, site_description, logo_url, favicon_url, whatsapp_url
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
       [
+        defaultSiteKey,
         "en",
         "CevreDent",
         "CevreDent - Dental Clinic in Turkey",
@@ -804,10 +901,11 @@ async function seedCms() {
     await client.query(
       `
         INSERT INTO footer_settings (
-          locale, logo_url, phone, email, address, copyright_text
-        ) VALUES ($1, $2, $3, $4, $5, $6)
+          site_key, locale, logo_url, phone, email, address, copyright_text
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       `,
       [
+        defaultSiteKey,
         "en",
         "/assets/images/image-027.png",
         "+90 551 862 25 25",
@@ -820,20 +918,21 @@ async function seedCms() {
     for (const [index, link] of socialLinks.entries()) {
       await client.query(
         `
-          INSERT INTO social_links (locale, platform, label, url, sort_order)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO social_links (site_key, locale, platform, label, url, sort_order)
+          VALUES ($1, $2, $3, $4, $5, $6)
         `,
-        ["en", link.label.toLowerCase(), link.label, link.href, index]
+        [defaultSiteKey, "en", link.label.toLowerCase(), link.label, link.href, index]
       );
     }
 
     await client.query(
       `
         INSERT INTO seo_settings (
-          locale, meta_title, meta_description, meta_keywords, og_image_url, robots, canonical_url
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          site_key, locale, meta_title, meta_description, meta_keywords, og_image_url, robots, canonical_url
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
       [
+        defaultSiteKey,
         "en",
         "CevreDent - Dental Clinic in Turkey",
         "Affordable dental implants, veneers, crowns, and smile makeovers in Turkey.",
@@ -846,11 +945,13 @@ async function seedCms() {
 
     await client.query(
       `
-        INSERT INTO custom_codes (name, placement, code, is_active)
+        INSERT INTO custom_codes (site_key, name, placement, code, is_active)
         VALUES
-          ('Analytics Placeholder', 'HEAD', '<!-- Add analytics code here -->', FALSE),
-          ('Body Widget Placeholder', 'BODY_END', '<!-- Add widget code here -->', FALSE)
+          ($1, 'Analytics Placeholder', 'HEAD', '<!-- Add analytics code here -->', FALSE),
+          ($1, 'Body Widget Placeholder', 'BODY_END', '<!-- Add widget code here -->', FALSE)
       `
+      ,
+      [defaultSiteKey]
     );
 
     const sections: SeedSection[] = [
@@ -1039,7 +1140,7 @@ async function seedCms() {
     ];
 
     for (const section of sections) {
-      await insertSeedSection(client, "en", section);
+      await insertSeedSection(client, defaultSiteKey, "en", section);
     }
 
     const mediaFiles = [
@@ -1067,10 +1168,12 @@ async function seedCms() {
       const originalName = mediaUrl.split("/").pop() || mediaUrl;
       await client.query(
         `
-          INSERT INTO media_assets (file_name, original_name, url, mime_type, size_bytes, category)
-          VALUES ($1, $2, $3, 'image/*', 0, 'seed')
+          INSERT INTO media_assets (
+            site_key, file_name, original_name, url, mime_type, size_bytes, category
+          )
+          VALUES ($1, $2, $3, $4, 'image/*', 0, 'seed')
         `,
-        [originalName, originalName, mediaUrl]
+        [defaultSiteKey, originalName, originalName, mediaUrl]
       );
     }
 
@@ -1084,16 +1187,284 @@ async function seedCms() {
   });
 }
 
-async function ensureHeaderSection(locale: string) {
+async function ensureSiteBaseContent(siteKey: SiteKey) {
+  if (siteKey === defaultSiteKey) {
+    return;
+  }
+
+  const existingBase = await pool.query(
+    "SELECT 1 FROM site_settings WHERE site_key = $1 AND locale = 'en' LIMIT 1",
+    [siteKey]
+  );
+  const customCodesCount = await pool.query(
+    "SELECT COUNT(*)::int AS count FROM custom_codes WHERE site_key = $1",
+    [siteKey]
+  );
+  const mediaCount = await pool.query(
+    "SELECT COUNT(*)::int AS count FROM media_assets WHERE site_key = $1",
+    [siteKey]
+  );
+
+  if (
+    existingBase.rowCount &&
+    (customCodesCount.rows[0]?.count || 0) > 0 &&
+    (mediaCount.rows[0]?.count || 0) > 0
+  ) {
+    return;
+  }
+
+  await withTransaction(async (client) => {
+    if (!existingBase.rowCount) {
+      await client.query(
+        `
+          INSERT INTO site_settings (
+            site_key, locale, site_name, site_title, site_description, logo_url, favicon_url,
+            whatsapp_url, updated_at
+          )
+          SELECT $1, locale, site_name, site_title, site_description, logo_url, favicon_url,
+            whatsapp_url, NOW()
+          FROM site_settings
+          WHERE site_key = $2 AND locale = 'en'
+        `,
+        [siteKey, defaultSiteKey]
+      );
+
+      await client.query(
+        `
+          INSERT INTO footer_settings (
+            site_key, locale, logo_url, phone, email, address, copyright_text, updated_at
+          )
+          SELECT $1, locale, logo_url, phone, email, address, copyright_text, NOW()
+          FROM footer_settings
+          WHERE site_key = $2 AND locale = 'en'
+        `,
+        [siteKey, defaultSiteKey]
+      );
+
+      await client.query(
+        `
+          INSERT INTO social_links (site_key, locale, platform, label, url, sort_order)
+          SELECT $1, locale, platform, label, url, sort_order
+          FROM social_links
+          WHERE site_key = $2 AND locale = 'en'
+        `,
+        [siteKey, defaultSiteKey]
+      );
+
+      await client.query(
+        `
+          INSERT INTO seo_settings (
+            site_key, locale, meta_title, meta_description, meta_keywords, og_image_url, robots,
+            canonical_url, updated_at
+          )
+          SELECT $1, locale, meta_title, meta_description, meta_keywords, og_image_url, robots,
+            canonical_url, NOW()
+          FROM seo_settings
+          WHERE site_key = $2 AND locale = 'en'
+        `,
+        [siteKey, defaultSiteKey]
+      );
+
+      await client.query(
+        `
+          INSERT INTO sections (
+            site_key, section_key, locale, name, section_type, sort_order, is_active, heading,
+            subheading, description, button_label, button_url, image_url, settings_json, updated_at
+          )
+          SELECT
+            $1, section_key, locale, name, section_type, sort_order, is_active, heading,
+            subheading, description, button_label, button_url, image_url, settings_json, NOW()
+          FROM sections
+          WHERE site_key = $2 AND locale = 'en'
+        `,
+        [siteKey, defaultSiteKey]
+      );
+
+      await client.query(
+        `
+          INSERT INTO section_items (
+            site_key, section_key, locale, item_type, title, subtitle, description, image_url,
+            video_url, link_url, alt_text, sort_order, is_active, settings_json, updated_at
+          )
+          SELECT
+            $1, section_key, locale, item_type, title, subtitle, description, image_url,
+            video_url, link_url, alt_text, sort_order, is_active, settings_json, NOW()
+          FROM section_items
+          WHERE site_key = $2 AND locale = 'en'
+        `,
+        [siteKey, defaultSiteKey]
+      );
+
+      await client.query(
+        `
+          INSERT INTO pages (site_key, page_key, locale, title, content, updated_at)
+          SELECT $1, page_key, locale, title, content, NOW()
+          FROM pages
+          WHERE site_key = $2 AND locale = 'en'
+          ON CONFLICT (site_key, page_key, locale) DO NOTHING
+        `,
+        [siteKey, defaultSiteKey]
+      );
+    }
+
+    if ((customCodesCount.rows[0]?.count || 0) <= 0) {
+      await client.query(
+        `
+          INSERT INTO custom_codes (site_key, name, placement, code, is_active, updated_at)
+          SELECT $1, name, placement, code, is_active, NOW()
+          FROM custom_codes
+          WHERE site_key = $2
+        `,
+        [siteKey, defaultSiteKey]
+      );
+    }
+
+    if ((mediaCount.rows[0]?.count || 0) <= 0) {
+      await client.query(
+        `
+          INSERT INTO media_assets (
+            site_key, file_name, original_name, url, mime_type, size_bytes, alt_text, category
+          )
+          SELECT $1, file_name, original_name, url, mime_type, size_bytes, alt_text, category
+          FROM media_assets
+          WHERE site_key = $2
+        `,
+        [siteKey, defaultSiteKey]
+      );
+    }
+  });
+}
+
+async function cloneLocaleContent(siteKey: SiteKey, locale: string, sourceLocale = "en") {
+  const normalizedLocale = normalizeCmsLocale(locale);
+
+  if (normalizedLocale === "en") {
+    return;
+  }
+
+  await initCms();
+  const existingLocale = await pool.query(
+    "SELECT 1 FROM site_settings WHERE site_key = $1 AND locale = $2 LIMIT 1",
+    [siteKey, normalizedLocale]
+  );
+
+  if (existingLocale.rowCount) {
+    return;
+  }
+
+  await withTransaction(async (client) => {
+    await client.query(
+      `
+        INSERT INTO site_settings (
+          site_key, locale, site_name, site_title, site_description, logo_url, favicon_url,
+          whatsapp_url, updated_at
+        )
+        SELECT $1, $2, site_name, site_title, site_description, logo_url, favicon_url,
+          whatsapp_url, NOW()
+        FROM site_settings
+        WHERE site_key = $1 AND locale = $3
+      `,
+      [siteKey, normalizedLocale, sourceLocale]
+    );
+
+    await client.query(
+      `
+        INSERT INTO footer_settings (
+          site_key, locale, logo_url, phone, email, address, copyright_text, updated_at
+        )
+        SELECT $1, $2, logo_url, phone, email, address, copyright_text, NOW()
+        FROM footer_settings
+        WHERE site_key = $1 AND locale = $3
+      `,
+      [siteKey, normalizedLocale, sourceLocale]
+    );
+
+    await client.query(
+      `
+        INSERT INTO social_links (site_key, locale, platform, label, url, sort_order)
+        SELECT $1, $2, platform, label, url, sort_order
+        FROM social_links
+        WHERE site_key = $1 AND locale = $3
+      `,
+      [siteKey, normalizedLocale, sourceLocale]
+    );
+
+    await client.query(
+      `
+        INSERT INTO seo_settings (
+          site_key, locale, meta_title, meta_description, meta_keywords, og_image_url, robots,
+          canonical_url, updated_at
+        )
+        SELECT $1, $2, meta_title, meta_description, meta_keywords, og_image_url, robots,
+          canonical_url, NOW()
+        FROM seo_settings
+        WHERE site_key = $1 AND locale = $3
+      `,
+      [siteKey, normalizedLocale, sourceLocale]
+    );
+
+    await client.query(
+      `
+        INSERT INTO sections (
+          site_key, section_key, locale, name, section_type, sort_order, is_active, heading,
+          subheading, description, button_label, button_url, image_url, settings_json, updated_at
+        )
+        SELECT
+          $1, section_key, $2, name, section_type, sort_order, is_active, heading, subheading,
+          description, button_label, button_url, image_url, settings_json, NOW()
+        FROM sections
+        WHERE site_key = $1 AND locale = $3
+      `,
+      [siteKey, normalizedLocale, sourceLocale]
+    );
+
+    await client.query(
+      `
+        INSERT INTO section_items (
+          site_key, section_key, locale, item_type, title, subtitle, description, image_url,
+          video_url, link_url, alt_text, sort_order, is_active, settings_json, updated_at
+        )
+        SELECT
+          $1, section_key, $2, item_type, title, subtitle, description, image_url, video_url,
+          link_url, alt_text, sort_order, is_active, settings_json, NOW()
+        FROM section_items
+        WHERE site_key = $1 AND locale = $3
+      `,
+      [siteKey, normalizedLocale, sourceLocale]
+    );
+
+    await client.query(
+      `
+        INSERT INTO pages (site_key, page_key, locale, title, content, updated_at)
+        SELECT $1, page_key, $2, title, content, NOW()
+        FROM pages
+        WHERE site_key = $1 AND locale = $3
+        ON CONFLICT (site_key, page_key, locale) DO NOTHING
+      `,
+      [siteKey, normalizedLocale, sourceLocale]
+    );
+  });
+}
+
+async function ensureHeaderSection(siteKey: SiteKey, locale: string) {
   await initCms();
 
   const headerResult = await pool.query(
-    "SELECT id FROM sections WHERE section_key = 'header' AND locale = $1 LIMIT 1",
-    [locale]
+    `
+      SELECT id
+      FROM sections
+      WHERE site_key = $1 AND section_key = 'header' AND locale = $2
+      LIMIT 1
+    `,
+    [siteKey, locale]
   );
   const headerItemsResult = await pool.query(
-    "SELECT COUNT(*)::int AS count FROM section_items WHERE section_key = 'header' AND locale = $1",
-    [locale]
+    `
+      SELECT COUNT(*)::int AS count
+      FROM section_items
+      WHERE site_key = $1 AND section_key = 'header' AND locale = $2
+    `,
+    [siteKey, locale]
   );
 
   if (headerResult.rowCount && headerItemsResult.rows[0]?.count > 0) {
@@ -1101,8 +1472,13 @@ async function ensureHeaderSection(locale: string) {
   }
 
   const heroResult = await pool.query(
-    "SELECT settings_json FROM sections WHERE section_key = 'hero' AND locale = $1 LIMIT 1",
-    [locale]
+    `
+      SELECT settings_json
+      FROM sections
+      WHERE site_key = $1 AND section_key = 'hero' AND locale = $2
+      LIMIT 1
+    `,
+    [siteKey, locale]
   );
   const headerLinks = getLegacyHeroNavLinks(heroResult.rows[0]?.settings_json);
 
@@ -1111,11 +1487,14 @@ async function ensureHeaderSection(locale: string) {
       await client.query(
         `
           INSERT INTO sections (
-            section_key, locale, name, section_type, sort_order, is_active, heading, subheading,
-            description, button_label, button_url, image_url, settings_json, updated_at
-          ) VALUES ('header', $1, 'Header', 'navigation', -1, TRUE, 'Header', '', '', '', '', '', NULL, NOW())
+            site_key, section_key, locale, name, section_type, sort_order, is_active, heading,
+            subheading, description, button_label, button_url, image_url, settings_json, updated_at
+          ) VALUES (
+            $1, 'header', $2, 'Header', 'navigation', -1, TRUE, 'Header', '', '', '', '', '',
+            NULL, NOW()
+          )
         `,
-        [locale]
+        [siteKey, locale]
       );
     }
 
@@ -1124,36 +1503,47 @@ async function ensureHeaderSection(locale: string) {
         await client.query(
           `
             INSERT INTO section_items (
-              section_key, locale, item_type, title, subtitle, description, image_url,
+              site_key, section_key, locale, item_type, title, subtitle, description, image_url,
               video_url, link_url, alt_text, sort_order, is_active, settings_json, updated_at
-            ) VALUES ('header', $1, 'nav-link', $2, '', '', '', '', $3, '', $4, TRUE, NULL, NOW())
+            ) VALUES (
+              $1, 'header', $2, 'nav-link', $3, '', '', '', '', $4, '', $5, TRUE, NULL, NOW()
+            )
           `,
-          [locale, link.label, link.href, index]
+          [siteKey, locale, link.label, link.href, index]
         );
       }
     }
   });
 }
 
-async function ensureExtendedSections(locale: string) {
+async function ensureExtendedSections(siteKey: SiteKey, locale: string) {
   await initCms();
   const sections = getExtendedSectionSeeds();
 
   await withTransaction(async (client) => {
     for (const section of sections) {
       const sectionResult = await client.query(
-        "SELECT id FROM sections WHERE section_key = $1 AND locale = $2 LIMIT 1",
-        [section.key, locale]
+        `
+          SELECT id
+          FROM sections
+          WHERE site_key = $1 AND section_key = $2 AND locale = $3
+          LIMIT 1
+        `,
+        [siteKey, section.key, locale]
       );
 
       if (!sectionResult.rowCount) {
-        await insertSeedSection(client, locale, section);
+        await insertSeedSection(client, siteKey, locale, section);
         continue;
       }
 
       const itemCountResult = await client.query(
-        "SELECT COUNT(*)::int AS count FROM section_items WHERE section_key = $1 AND locale = $2",
-        [section.key, locale]
+        `
+          SELECT COUNT(*)::int AS count
+          FROM section_items
+          WHERE site_key = $1 AND section_key = $2 AND locale = $3
+        `,
+        [siteKey, section.key, locale]
       );
       const itemCount = itemCountResult.rows[0]?.count || 0;
 
@@ -1162,11 +1552,12 @@ async function ensureExtendedSections(locale: string) {
           await client.query(
             `
               INSERT INTO section_items (
-                section_key, locale, item_type, title, subtitle, description, image_url,
+                site_key, section_key, locale, item_type, title, subtitle, description, image_url,
                 video_url, link_url, alt_text, sort_order, is_active, settings_json
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE, $12::jsonb)
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13::jsonb)
             `,
             [
+              siteKey,
               section.key,
               locale,
               item.itemType,
@@ -1189,10 +1580,10 @@ async function ensureExtendedSections(locale: string) {
           `
             SELECT id, sort_order, description
             FROM section_items
-            WHERE section_key = 'team' AND locale = $1
+            WHERE site_key = $1 AND section_key = 'team' AND locale = $2
             ORDER BY sort_order ASC, id ASC
           `,
-          [locale]
+          [siteKey, locale]
         );
 
         for (const seedItem of section.items || []) {
@@ -1216,17 +1607,12 @@ async function ensureExtendedSections(locale: string) {
   });
 }
 
-async function ensureLocaleContent(locale: string) {
+async function ensureLocaleContent(siteKey: SiteKey, locale: string) {
+  const normalizedLocale = normalizeCmsLocale(locale);
   await initCms();
 
-  if (locale === "en") {
-    await ensureHeaderSection(locale);
-    await ensureExtendedSections(locale);
-    return;
-  }
-
   const localeExists = await pool.query("SELECT code FROM locales WHERE code = $1 LIMIT 1", [
-    locale
+    normalizedLocale
   ]);
 
   if (!localeExists.rowCount) {
@@ -1235,109 +1621,35 @@ async function ensureLocaleContent(locale: string) {
         INSERT INTO locales (code, label, direction, is_default, is_active)
         VALUES ($1, $2, 'ltr', FALSE, TRUE)
       `,
-      [locale, locale.toUpperCase()]
+      [normalizedLocale, normalizedLocale.toUpperCase()]
     );
   }
 
-  const siteExists = await pool.query(
-    "SELECT locale FROM site_settings WHERE locale = $1 LIMIT 1",
-    [locale]
-  );
+  await ensureSiteBaseContent(siteKey);
 
-  if (!siteExists.rowCount) {
-    await withTransaction(async (client) => {
-      await client.query(
-        `
-          INSERT INTO site_settings (
-            locale, site_name, site_title, site_description, logo_url, favicon_url, whatsapp_url, updated_at
-          )
-          SELECT $1, site_name, site_title, site_description, logo_url, favicon_url, whatsapp_url, NOW()
-          FROM site_settings
-          WHERE locale = 'en'
-        `,
-        [locale]
-      );
-
-      await client.query(
-        `
-          INSERT INTO footer_settings (
-            locale, logo_url, phone, email, address, copyright_text, updated_at
-          )
-          SELECT $1, logo_url, phone, email, address, copyright_text, NOW()
-          FROM footer_settings
-          WHERE locale = 'en'
-        `,
-        [locale]
-      );
-
-      await client.query(
-        `
-          INSERT INTO social_links (locale, platform, label, url, sort_order)
-          SELECT $1, platform, label, url, sort_order
-          FROM social_links
-          WHERE locale = 'en'
-        `,
-        [locale]
-      );
-
-      await client.query(
-        `
-          INSERT INTO seo_settings (
-            locale, meta_title, meta_description, meta_keywords, og_image_url, robots, canonical_url, updated_at
-          )
-          SELECT $1, meta_title, meta_description, meta_keywords, og_image_url, robots, canonical_url, NOW()
-          FROM seo_settings
-          WHERE locale = 'en'
-        `,
-        [locale]
-      );
-
-      await client.query(
-        `
-          INSERT INTO sections (
-            section_key, locale, name, section_type, sort_order, is_active, heading, subheading,
-            description, button_label, button_url, image_url, settings_json, updated_at
-          )
-          SELECT
-            section_key, $1, name, section_type, sort_order, is_active, heading, subheading,
-            description, button_label, button_url, image_url, settings_json, NOW()
-          FROM sections
-          WHERE locale = 'en'
-        `,
-        [locale]
-      );
-
-      await client.query(
-        `
-          INSERT INTO section_items (
-            section_key, locale, item_type, title, subtitle, description, image_url,
-            video_url, link_url, alt_text, sort_order, is_active, settings_json, updated_at
-          )
-          SELECT
-            section_key, $1, item_type, title, subtitle, description, image_url,
-            video_url, link_url, alt_text, sort_order, is_active, settings_json, NOW()
-          FROM section_items
-          WHERE locale = 'en'
-        `,
-        [locale]
-      );
-    });
+  if (normalizedLocale !== "en") {
+    await cloneLocaleContent(siteKey, normalizedLocale);
   }
 
-  await ensureHeaderSection(locale);
-  await ensureExtendedSections(locale);
+  await ensureHeaderSection(siteKey, normalizedLocale);
+  await ensureExtendedSections(siteKey, normalizedLocale);
 }
 
-export async function getSiteSettings(locale = "en"): Promise<SiteSettings> {
-  await ensureLocaleContent(locale);
+export async function getSiteSettings(
+  siteOrLocale = defaultSiteKey,
+  maybeLocale?: string
+): Promise<SiteSettings> {
+  const { siteKey, locale } = normalizeSiteLocaleArgs(siteOrLocale, maybeLocale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   const result = await pool.query(
-    "SELECT * FROM site_settings WHERE locale = $1 LIMIT 1",
-    [locale]
+    "SELECT * FROM site_settings WHERE site_key = $1 AND locale = $2 LIMIT 1",
+    [siteKey, locale]
   );
   const row = result.rows[0];
 
   return {
+    siteKey,
     locale: row.locale,
     siteName: row.site_name,
     siteTitle: row.site_title,
@@ -1348,19 +1660,32 @@ export async function getSiteSettings(locale = "en"): Promise<SiteSettings> {
   };
 }
 
-export async function getFooterSettings(locale = "en"): Promise<FooterSettings> {
-  await ensureLocaleContent(locale);
+export async function getFooterSettings(
+  siteOrLocale = defaultSiteKey,
+  maybeLocale?: string
+): Promise<FooterSettings> {
+  const { siteKey, locale } = normalizeSiteLocaleArgs(siteOrLocale, maybeLocale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   const [footerResult, linksResult] = await Promise.all([
-    pool.query("SELECT * FROM footer_settings WHERE locale = $1 LIMIT 1", [locale]),
+    pool.query("SELECT * FROM footer_settings WHERE site_key = $1 AND locale = $2 LIMIT 1", [
+      siteKey,
+      locale
+    ]),
     pool.query(
-      "SELECT * FROM social_links WHERE locale = $1 ORDER BY sort_order ASC, id ASC",
-      [locale]
+      `
+        SELECT *
+        FROM social_links
+        WHERE site_key = $1 AND locale = $2
+        ORDER BY sort_order ASC, id ASC
+      `,
+      [siteKey, locale]
     )
   ]);
   const row = footerResult.rows[0];
 
   return {
+    siteKey,
     locale: row.locale,
     logoUrl: row.logo_url || "",
     phone: row.phone || "",
@@ -1377,16 +1702,21 @@ export async function getFooterSettings(locale = "en"): Promise<FooterSettings> 
   };
 }
 
-export async function getSeoSettings(locale = "en"): Promise<SeoSettings> {
-  await ensureLocaleContent(locale);
+export async function getSeoSettings(
+  siteOrLocale = defaultSiteKey,
+  maybeLocale?: string
+): Promise<SeoSettings> {
+  const { siteKey, locale } = normalizeSiteLocaleArgs(siteOrLocale, maybeLocale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   const result = await pool.query(
-    "SELECT * FROM seo_settings WHERE locale = $1 LIMIT 1",
-    [locale]
+    "SELECT * FROM seo_settings WHERE site_key = $1 AND locale = $2 LIMIT 1",
+    [siteKey, locale]
   );
   const row = result.rows[0];
 
   return {
+    siteKey,
     locale,
     metaTitle: row?.meta_title || "",
     metaDescription: row?.meta_description || "",
@@ -1397,11 +1727,15 @@ export async function getSeoSettings(locale = "en"): Promise<SeoSettings> {
   };
 }
 
-export async function getCustomCodes(): Promise<CustomCode[]> {
+export async function getCustomCodes(siteKey = defaultSiteKey): Promise<CustomCode[]> {
   await initCms();
-  const result = await pool.query("SELECT * FROM custom_codes ORDER BY id ASC");
+  const result = await pool.query(
+    "SELECT * FROM custom_codes WHERE site_key = $1 ORDER BY id ASC",
+    [siteKey]
+  );
   return result.rows.map((row) => ({
     id: row.id,
+    siteKey: normalizeSiteKey(row.site_key),
     name: row.name,
     placement: row.placement,
     code: row.code,
@@ -1409,23 +1743,38 @@ export async function getCustomCodes(): Promise<CustomCode[]> {
   }));
 }
 
-export async function getSections(locale = "en"): Promise<Section[]> {
-  await ensureLocaleContent(locale);
+export async function getSections(
+  siteOrLocale = defaultSiteKey,
+  maybeLocale?: string
+): Promise<Section[]> {
+  const { siteKey, locale } = normalizeSiteLocaleArgs(siteOrLocale, maybeLocale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   const [sectionResult, itemResult] = await Promise.all([
     pool.query(
-      "SELECT * FROM sections WHERE locale = $1 ORDER BY sort_order ASC, id ASC",
-      [locale]
+      `
+        SELECT *
+        FROM sections
+        WHERE site_key = $1 AND locale = $2
+        ORDER BY sort_order ASC, id ASC
+      `,
+      [siteKey, locale]
     ),
     pool.query(
-      "SELECT * FROM section_items WHERE locale = $1 ORDER BY sort_order ASC, id ASC",
-      [locale]
+      `
+        SELECT *
+        FROM section_items
+        WHERE site_key = $1 AND locale = $2
+        ORDER BY sort_order ASC, id ASC
+      `,
+      [siteKey, locale]
     )
   ]);
 
   return sectionResult.rows.map((section) => ({
     id: section.id,
     key: section.section_key,
+    siteKey: normalizeSiteKey(section.site_key),
     locale: section.locale,
     name: section.name,
     sectionType: section.section_type,
@@ -1460,19 +1809,27 @@ export async function getSections(locale = "en"): Promise<Section[]> {
 
 export async function getSectionByKey(
   key: string,
-  locale = "en"
+  siteOrLocale = defaultSiteKey,
+  maybeLocale?: string
 ): Promise<Section | null> {
-  const sections = await getSections(locale);
+  const sections = await getSections(siteOrLocale, maybeLocale);
   return sections.find((section) => section.key === key) || null;
 }
 
-export async function getMediaAssets(): Promise<MediaAsset[]> {
+export async function getMediaAssets(siteKey = defaultSiteKey): Promise<MediaAsset[]> {
   await initCms();
   const result = await pool.query(
-    "SELECT * FROM media_assets ORDER BY created_at DESC, id DESC"
+    `
+      SELECT *
+      FROM media_assets
+      WHERE site_key = $1
+      ORDER BY created_at DESC, id DESC
+    `,
+    [siteKey]
   );
   return result.rows.map((row) => ({
     id: row.id,
+    siteKey: normalizeSiteKey(row.site_key),
     fileName: row.file_name,
     originalName: row.original_name,
     url: row.url,
@@ -1499,13 +1856,17 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
   }));
 }
 
-export async function getDashboardOverview(locale = "en") {
+export async function getDashboardOverview(
+  siteOrLocale = defaultSiteKey,
+  maybeLocale?: string
+) {
+  const { siteKey, locale } = normalizeSiteLocaleArgs(siteOrLocale, maybeLocale);
   const [site, footer, seo, sections, mediaAssets, admins] = await Promise.all([
-    getSiteSettings(locale),
-    getFooterSettings(locale),
-    getSeoSettings(locale),
-    getSections(locale),
-    getMediaAssets(),
+    getSiteSettings(siteKey, locale),
+    getFooterSettings(siteKey, locale),
+    getSeoSettings(siteKey, locale),
+    getSections(siteKey, locale),
+    getMediaAssets(siteKey),
     getAdminUsers()
   ]);
 
@@ -1521,14 +1882,18 @@ export async function getDashboardOverview(locale = "en") {
   };
 }
 
-export async function getManagedPages(locale = "en"): Promise<ManagedPage[]> {
+export async function getManagedPages(
+  siteOrLocale = defaultSiteKey,
+  maybeLocale?: string
+): Promise<ManagedPage[]> {
+  const { siteKey, locale } = normalizeSiteLocaleArgs(siteOrLocale, maybeLocale);
   const normalizedLocale = normalizeManagedLocale(locale);
   await initCms();
   const result = await pool.query(
     `
       SELECT *
       FROM pages
-      WHERE locale = $1
+      WHERE site_key = $1 AND locale = $2
       ORDER BY CASE page_key
         WHEN 'thankyou' THEN 0
         WHEN 'privacy-policy' THEN 1
@@ -1536,12 +1901,13 @@ export async function getManagedPages(locale = "en"): Promise<ManagedPage[]> {
         ELSE 99
       END, id ASC
     `,
-    [normalizedLocale]
+    [siteKey, normalizedLocale]
   );
 
   return result.rows.map((row) => ({
     id: row.id,
     key: row.page_key as ManagedPageKey,
+    siteKey: normalizeSiteKey(row.site_key),
     locale: row.locale,
     title: row.title,
     content: row.content,
@@ -1551,22 +1917,24 @@ export async function getManagedPages(locale = "en"): Promise<ManagedPage[]> {
 
 export async function getManagedPageByKey(
   key: string,
-  locale = "en"
+  siteOrLocale = defaultSiteKey,
+  maybeLocale?: string
 ): Promise<ManagedPage | null> {
   if (!managedPageKeys.includes(key as ManagedPageKey)) {
     return null;
   }
 
+  const { siteKey, locale } = normalizeSiteLocaleArgs(siteOrLocale, maybeLocale);
   const normalizedLocale = normalizeManagedLocale(locale);
   await initCms();
   const result = await pool.query(
     `
       SELECT *
       FROM pages
-      WHERE page_key = $1 AND locale = $2
+      WHERE site_key = $1 AND page_key = $2 AND locale = $3
       LIMIT 1
     `,
-    [key, normalizedLocale]
+    [siteKey, key, normalizedLocale]
   );
   const row = result.rows[0];
 
@@ -1575,6 +1943,7 @@ export async function getManagedPageByKey(
     return {
       id: 0,
       key: key as ManagedPageKey,
+      siteKey,
       locale: normalizedLocale,
       title: fallback.title,
       content: fallback.content,
@@ -1585,6 +1954,7 @@ export async function getManagedPageByKey(
   return {
     id: row.id,
     key: row.page_key as ManagedPageKey,
+    siteKey: normalizeSiteKey(row.site_key),
     locale: row.locale,
     title: row.title,
     content: row.content,
@@ -1593,6 +1963,7 @@ export async function getManagedPageByKey(
 }
 
 export async function upsertSiteSettings(data: {
+  siteKey?: string;
   locale?: string;
   siteName: string;
   siteTitle: string;
@@ -1601,14 +1972,17 @@ export async function upsertSiteSettings(data: {
   faviconUrl: string;
   whatsappUrl: string;
 }) {
-  await ensureLocaleContent(data.locale || "en");
+  const siteKey = normalizeSiteKey(data.siteKey);
+  const locale = normalizeCmsLocale(data.locale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   await pool.query(
     `
       INSERT INTO site_settings (
-        locale, site_name, site_title, site_description, logo_url, favicon_url, whatsapp_url, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-      ON CONFLICT (locale) DO UPDATE SET
+        site_key, locale, site_name, site_title, site_description, logo_url, favicon_url,
+        whatsapp_url, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+      ON CONFLICT (site_key, locale) DO UPDATE SET
         site_name = EXCLUDED.site_name,
         site_title = EXCLUDED.site_title,
         site_description = EXCLUDED.site_description,
@@ -1618,7 +1992,8 @@ export async function upsertSiteSettings(data: {
         updated_at = NOW()
     `,
     [
-      data.locale || "en",
+      siteKey,
+      locale,
       data.siteName,
       data.siteTitle,
       data.siteDescription,
@@ -1630,6 +2005,7 @@ export async function upsertSiteSettings(data: {
 }
 
 export async function upsertFooterSettings(data: {
+  siteKey?: string;
   locale?: string;
   logoUrl: string;
   phone: string;
@@ -1637,14 +2013,16 @@ export async function upsertFooterSettings(data: {
   address: string;
   copyrightText: string;
 }) {
-  await ensureLocaleContent(data.locale || "en");
+  const siteKey = normalizeSiteKey(data.siteKey);
+  const locale = normalizeCmsLocale(data.locale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   await pool.query(
     `
       INSERT INTO footer_settings (
-        locale, logo_url, phone, email, address, copyright_text, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
-      ON CONFLICT (locale) DO UPDATE SET
+        site_key, locale, logo_url, phone, email, address, copyright_text, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      ON CONFLICT (site_key, locale) DO UPDATE SET
         logo_url = EXCLUDED.logo_url,
         phone = EXCLUDED.phone,
         email = EXCLUDED.email,
@@ -1653,7 +2031,8 @@ export async function upsertFooterSettings(data: {
         updated_at = NOW()
     `,
     [
-      data.locale || "en",
+      siteKey,
+      locale,
       data.logoUrl,
       data.phone,
       data.email,
@@ -1664,50 +2043,57 @@ export async function upsertFooterSettings(data: {
 }
 
 export async function upsertManagedPage(data: {
+  siteKey?: string;
   key: ManagedPageKey;
   locale?: string;
   title: string;
   content: string;
 }) {
+  const siteKey = normalizeSiteKey(data.siteKey);
   const normalizedLocale = normalizeManagedLocale(data.locale);
   await initCms();
   await pool.query(
     `
-      INSERT INTO pages (page_key, locale, title, content, updated_at)
-      VALUES ($1, $2, $3, $4, NOW())
-      ON CONFLICT (page_key, locale) DO UPDATE SET
+      INSERT INTO pages (site_key, page_key, locale, title, content, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+      ON CONFLICT (site_key, page_key, locale) DO UPDATE SET
         title = EXCLUDED.title,
         content = EXCLUDED.content,
         updated_at = NOW()
     `,
-    [data.key, normalizedLocale, data.title, data.content]
+    [siteKey, data.key, normalizedLocale, data.title, data.content]
   );
 }
 
 export async function replaceSocialLinks(
+  siteKey: SiteKey,
   locale: string,
   links: Array<{ platform: string; label: string; url: string }>
 ) {
-  await ensureLocaleContent(locale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   await withTransaction(async (client) => {
-    await client.query("DELETE FROM social_links WHERE locale = $1", [locale]);
+    await client.query("DELETE FROM social_links WHERE site_key = $1 AND locale = $2", [
+      siteKey,
+      locale
+    ]);
     for (const [index, link] of links.entries()) {
       if (!link.label && !link.url) {
         continue;
       }
       await client.query(
         `
-          INSERT INTO social_links (locale, platform, label, url, sort_order)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO social_links (site_key, locale, platform, label, url, sort_order)
+          VALUES ($1, $2, $3, $4, $5, $6)
         `,
-        [locale, link.platform || link.label.toLowerCase(), link.label, link.url, index]
+        [siteKey, locale, link.platform || link.label.toLowerCase(), link.label, link.url, index]
       );
     }
   });
 }
 
 export async function upsertSeoSettings(data: {
+  siteKey?: string;
   locale?: string;
   metaTitle: string;
   metaDescription: string;
@@ -1716,14 +2102,17 @@ export async function upsertSeoSettings(data: {
   robots: string;
   canonicalUrl: string;
 }) {
-  await ensureLocaleContent(data.locale || "en");
+  const siteKey = normalizeSiteKey(data.siteKey);
+  const locale = normalizeCmsLocale(data.locale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   await pool.query(
     `
       INSERT INTO seo_settings (
-        locale, meta_title, meta_description, meta_keywords, og_image_url, robots, canonical_url, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-      ON CONFLICT (locale) DO UPDATE SET
+        site_key, locale, meta_title, meta_description, meta_keywords, og_image_url, robots,
+        canonical_url, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+      ON CONFLICT (site_key, locale) DO UPDATE SET
         meta_title = EXCLUDED.meta_title,
         meta_description = EXCLUDED.meta_description,
         meta_keywords = EXCLUDED.meta_keywords,
@@ -1733,7 +2122,8 @@ export async function upsertSeoSettings(data: {
         updated_at = NOW()
     `,
     [
-      data.locale || "en",
+      siteKey,
+      locale,
       data.metaTitle,
       data.metaDescription,
       data.metaKeywords,
@@ -1745,6 +2135,7 @@ export async function upsertSeoSettings(data: {
 }
 
 export async function createCustomCode(data: {
+  siteKey?: string;
   name: string;
   placement: string;
   code: string;
@@ -1753,15 +2144,16 @@ export async function createCustomCode(data: {
   await initCms();
   await pool.query(
     `
-      INSERT INTO custom_codes (name, placement, code, is_active, updated_at)
-      VALUES ($1, $2, $3, $4, NOW())
+      INSERT INTO custom_codes (site_key, name, placement, code, is_active, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
     `,
-    [data.name, data.placement, data.code, data.isActive]
+    [normalizeSiteKey(data.siteKey), data.name, data.placement, data.code, data.isActive]
   );
 }
 
 export async function updateCustomCode(data: {
   id: number;
+  siteKey?: string;
   name: string;
   placement: string;
   code: string;
@@ -1772,19 +2164,20 @@ export async function updateCustomCode(data: {
     `
       UPDATE custom_codes
       SET name = $1, placement = $2, code = $3, is_active = $4, updated_at = NOW()
-      WHERE id = $5
+      WHERE id = $5 AND site_key = $6
     `,
-    [data.name, data.placement, data.code, data.isActive, data.id]
+    [data.name, data.placement, data.code, data.isActive, data.id, normalizeSiteKey(data.siteKey)]
   );
 }
 
-export async function deleteCustomCode(id: number) {
+export async function deleteCustomCode(id: number, siteKey = defaultSiteKey) {
   await initCms();
-  await pool.query("DELETE FROM custom_codes WHERE id = $1", [id]);
+  await pool.query("DELETE FROM custom_codes WHERE id = $1 AND site_key = $2", [id, siteKey]);
 }
 
 export async function updateSection(data: {
   key: string;
+  siteKey?: string;
   locale?: string;
   name: string;
   sectionType: string;
@@ -1798,7 +2191,9 @@ export async function updateSection(data: {
   imageUrl: string;
   settings: JsonValue;
 }) {
-  await ensureLocaleContent(data.locale || "en");
+  const siteKey = normalizeSiteKey(data.siteKey);
+  const locale = normalizeCmsLocale(data.locale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   await pool.query(
     `
@@ -1806,7 +2201,7 @@ export async function updateSection(data: {
       SET name = $1, section_type = $2, sort_order = $3, is_active = $4, heading = $5,
           subheading = $6, description = $7, button_label = $8, button_url = $9,
           image_url = $10, settings_json = $11::jsonb, updated_at = NOW()
-      WHERE section_key = $12 AND locale = $13
+      WHERE site_key = $12 AND section_key = $13 AND locale = $14
     `,
     [
       data.name,
@@ -1820,14 +2215,16 @@ export async function updateSection(data: {
       data.buttonUrl,
       data.imageUrl,
       JSON.stringify(data.settings || null),
+      siteKey,
       data.key,
-      data.locale || "en"
+      locale
     ]
   );
 }
 
 export async function upsertSectionItem(data: {
   id?: number;
+  siteKey?: string;
   sectionKey: string;
   locale?: string;
   itemType: string;
@@ -1842,7 +2239,9 @@ export async function upsertSectionItem(data: {
   isActive: boolean;
   settings: JsonValue;
 }) {
-  await ensureLocaleContent(data.locale || "en");
+  const siteKey = normalizeSiteKey(data.siteKey);
+  const locale = normalizeCmsLocale(data.locale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   if (data.id) {
     await pool.query(
@@ -1874,13 +2273,16 @@ export async function upsertSectionItem(data: {
   await pool.query(
     `
       INSERT INTO section_items (
-        section_key, locale, item_type, title, subtitle, description, image_url, video_url,
-        link_url, alt_text, sort_order, is_active, settings_json, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, NOW())
+        site_key, section_key, locale, item_type, title, subtitle, description, image_url,
+        video_url, link_url, alt_text, sort_order, is_active, settings_json, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, NOW()
+      )
     `,
     [
+      siteKey,
       data.sectionKey,
-      data.locale || "en",
+      locale,
       data.itemType,
       data.title,
       data.subtitle,
@@ -1903,9 +2305,10 @@ export async function deleteSectionItem(id: number) {
 
 export async function reorderSections(
   updates: Array<{ key: string; sortOrder: number; isActive: boolean }>,
+  siteKey = defaultSiteKey,
   locale = "en"
 ) {
-  await ensureLocaleContent(locale);
+  await ensureLocaleContent(siteKey, locale);
   await initCms();
   await withTransaction(async (client) => {
     for (const update of updates) {
@@ -1913,15 +2316,20 @@ export async function reorderSections(
         `
           UPDATE sections
           SET sort_order = $1, is_active = $2, updated_at = NOW()
-          WHERE section_key = $3 AND locale = $4
+          WHERE site_key = $3 AND section_key = $4 AND locale = $5
         `,
-        [update.sortOrder, update.isActive, update.key, locale]
+        [update.sortOrder, update.isActive, siteKey, update.key, locale]
       );
     }
   });
 }
 
-export async function createMediaAsset(file: File, altText = "", category = "library") {
+export async function createMediaAsset(
+  file: File,
+  altText = "",
+  category = "library",
+  siteKey = defaultSiteKey
+) {
   await initCms();
   const buffer = Buffer.from(await file.arrayBuffer());
   const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "-")}`;
@@ -1931,35 +2339,55 @@ export async function createMediaAsset(file: File, altText = "", category = "lib
   const url = `/uploads/${fileName}`;
   await pool.query(
     `
-      INSERT INTO media_assets (file_name, original_name, url, mime_type, size_bytes, alt_text, category)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO media_assets (
+        site_key, file_name, original_name, url, mime_type, size_bytes, alt_text, category
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `,
-    [fileName, file.name, url, file.type || "application/octet-stream", buffer.byteLength, altText, category]
+    [
+      siteKey,
+      fileName,
+      file.name,
+      url,
+      file.type || "application/octet-stream",
+      buffer.byteLength,
+      altText,
+      category
+    ]
   );
 
   return url;
 }
 
-export async function deleteMediaAsset(id: number) {
+export async function deleteMediaAsset(id: number, siteKey = defaultSiteKey) {
   await initCms();
-  const result = await pool.query("SELECT * FROM media_assets WHERE id = $1 LIMIT 1", [id]);
+  const result = await pool.query(
+    "SELECT * FROM media_assets WHERE id = $1 AND site_key = $2 LIMIT 1",
+    [id, siteKey]
+  );
   const asset = result.rows[0];
 
   if (!asset) {
     return;
   }
 
+  const relatedAssetCount = await pool.query(
+    "SELECT COUNT(*)::int AS count FROM media_assets WHERE url = $1 AND id <> $2",
+    [asset.url, id]
+  );
+
   if (asset.url.startsWith("/uploads/")) {
     const targetPath = path.join(process.cwd(), "public", asset.url.replace(/^\//, ""));
-    if (fs.existsSync(targetPath)) {
+    if ((relatedAssetCount.rows[0]?.count || 0) <= 0 && fs.existsSync(targetPath)) {
       fs.unlinkSync(targetPath);
     }
   }
 
-  await pool.query("DELETE FROM media_assets WHERE id = $1", [id]);
+  await pool.query("DELETE FROM media_assets WHERE id = $1 AND site_key = $2", [id, siteKey]);
 }
 
 export async function createFormSubmission(data: {
+  siteKey?: string;
   locale?: string;
   source: string;
   formName?: string;
@@ -1971,15 +2399,17 @@ export async function createFormSubmission(data: {
   payload?: Record<string, unknown>;
 }) {
   await initCms();
+  const siteKey = normalizeSiteKey(data.siteKey);
   const result = await pool.query(
     `
       INSERT INTO form_submissions (
-        locale, source, form_name, page, full_name, phone, email, message, payload_json
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+        site_key, locale, source, form_name, page, full_name, phone, email, message, payload_json
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
       RETURNING id
     `,
     [
-      data.locale || "en",
+      siteKey,
+      normalizeCmsLocale(data.locale),
       data.source,
       data.formName || null,
       data.page || null,
@@ -1995,6 +2425,7 @@ export async function createFormSubmission(data: {
 }
 
 export async function createSpinSubmission(data: {
+  siteKey?: string;
   locale?: string;
   source?: string;
   page?: string;
@@ -2004,15 +2435,17 @@ export async function createSpinSubmission(data: {
   payload?: Record<string, unknown>;
 }) {
   await initCms();
+  const siteKey = normalizeSiteKey(data.siteKey);
   const result = await pool.query(
     `
       INSERT INTO spin_submissions (
-        locale, source, page, full_name, phone, prize, payload_json
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+        site_key, locale, source, page, full_name, phone, prize, payload_json
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
       RETURNING id
     `,
     [
-      data.locale || "en",
+      siteKey,
+      normalizeCmsLocale(data.locale),
       data.source || "lucky-spin",
       data.page || null,
       data.fullName,
@@ -2070,6 +2503,7 @@ export async function getFormSubmissions(
   await initCms();
   const params: Array<string | Date> = [];
   const conditions = [
+    `site_key = $${params.push(normalizeSiteKey(queryOptions.siteKey))}`,
     "COALESCE(source, '') <> 'lucky-spin'",
     "COALESCE(payload_json->>'prize', '') = ''",
     "COALESCE(payload_json->>'spinPrize', '') = ''"
@@ -2104,6 +2538,7 @@ export async function getFormSubmissions(
 
   return result.rows.map((row) => ({
     id: row.id,
+    siteKey: normalizeSiteKey(row.site_key),
     locale: row.locale,
     source: row.source,
     formName: row.form_name || "",
@@ -2123,7 +2558,7 @@ export async function getSpinSubmissions(
   const queryOptions = normalizeSubmissionQueryOptions(options);
   await initCms();
   const params: Array<string | Date> = [];
-  const conditions: string[] = [];
+  const conditions: string[] = [`site_key = $${params.push(normalizeSiteKey(queryOptions.siteKey))}`];
   const { start, end, endOperator } = getSubmissionDateRange(queryOptions);
 
   if (queryOptions.locale) {
@@ -2148,6 +2583,7 @@ export async function getSpinSubmissions(
       WITH all_spin AS (
         SELECT
           CONCAT('spin-', id) AS id,
+          site_key,
           locale,
           source,
           page,
@@ -2162,6 +2598,7 @@ export async function getSpinSubmissions(
 
         SELECT
           CONCAT('legacy-', id) AS id,
+          site_key,
           locale,
           source,
           page,
@@ -2186,6 +2623,7 @@ export async function getSpinSubmissions(
 
   return result.rows.map((row) => ({
     id: String(row.id || ""),
+    siteKey: normalizeSiteKey(row.site_key),
     locale: row.locale || "en",
     source: row.source || "lucky-spin",
     page: row.page || "",
@@ -2270,12 +2708,16 @@ export async function deleteAdminUser(id: number) {
   await pool.query("DELETE FROM admin_users WHERE id = $1", [id]);
 }
 
-export async function getPublicSiteContent(locale = "en") {
+export async function getPublicSiteContent(
+  siteOrLocale = defaultSiteKey,
+  maybeLocale?: string
+) {
+  const { siteKey, locale } = normalizeSiteLocaleArgs(siteOrLocale, maybeLocale);
   const [site, footer, seo, sections] = await Promise.all([
-    getSiteSettings(locale),
-    getFooterSettings(locale),
-    getSeoSettings(locale),
-    getSections(locale)
+    getSiteSettings(siteKey, locale),
+    getFooterSettings(siteKey, locale),
+    getSeoSettings(siteKey, locale),
+    getSections(siteKey, locale)
   ]);
 
   const get = (key: string) => sections.find((section) => section.key === key) || null;

@@ -15,6 +15,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const filters = normalizeDataLeadsFilters(searchParams);
   const records = await getFormSubmissions({
+    siteKey: filters.siteKey,
     order: filters.order,
     month: filters.month,
     from: filters.from,

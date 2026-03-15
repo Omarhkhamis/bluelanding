@@ -12,17 +12,19 @@ import { StatusNotice } from "@/components/admin/status-notice";
 import { getSectionItemIconSettings } from "@/lib/admin-icons";
 import { getSectionByKey } from "@/lib/cms";
 import { getFooterNavItems, normalizeFooterNavItems } from "@/lib/footer-nav";
+import { getSiteLabel, normalizeSiteKey } from "@/lib/sites";
 
 export default async function AdminSectionEditorPage({
   params,
   searchParams
 }: {
   params: Promise<{ sectionKey: string }>;
-  searchParams: Promise<{ locale?: string; status?: string }>;
+  searchParams: Promise<{ locale?: string; site?: string; status?: string }>;
 }) {
   const { sectionKey } = await params;
-  const { locale = "en", status } = await searchParams;
-  const section = await getSectionByKey(sectionKey, locale);
+  const { locale = "en", site, status } = await searchParams;
+  const siteKey = normalizeSiteKey(site);
+  const section = await getSectionByKey(sectionKey, siteKey, locale);
 
   if (!section) {
     notFound();
@@ -96,7 +98,8 @@ export default async function AdminSectionEditorPage({
           <div className="admin-eyebrow">Section Editor</div>
           <h1 className="admin-page-title">{section.name}</h1>
           <p className="admin-help">
-            Editing locale {locale.toUpperCase()} for key <strong>{section.key}</strong>.
+            Editing {getSiteLabel(siteKey)} / {locale.toUpperCase()} for key{" "}
+            <strong>{section.key}</strong>.
           </p>
         </div>
       </div>
@@ -104,6 +107,7 @@ export default async function AdminSectionEditorPage({
       <StatusNotice status={status} />
 
       <form action={saveSectionAction} className="admin-form">
+        <input type="hidden" name="site" value={siteKey} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="returnPath" value={`/admin/sections/${section.key}`} />
         <input type="hidden" name="key" value={section.key} />

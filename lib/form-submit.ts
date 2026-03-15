@@ -1,6 +1,7 @@
 "use client";
 
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { extractSiteLocaleFromPathname, getSitePagePath } from "@/lib/sites";
 
 type FormPayload = Record<string, string>;
 
@@ -121,6 +122,9 @@ export function buildFormPayload(
 
   if (typeof window !== "undefined") {
     payload.page = window.location.pathname;
+    const routeContext = extractSiteLocaleFromPathname(window.location.pathname);
+    payload.site = routeContext.siteKey;
+    payload.locale = routeContext.locale;
   }
 
   for (const [key, value] of Object.entries(overrides)) {
@@ -231,7 +235,13 @@ export async function submitFormPayload(payload: FormPayload, options: SubmitOpt
     }
 
     if (!options.skipRedirect && typeof window !== "undefined") {
-      window.location.assign(String(data.thankYouUrl || "/thankyou"));
+      const routeContext = extractSiteLocaleFromPathname(normalizedPayload.page || "/");
+      window.location.assign(
+        String(
+          data.thankYouUrl ||
+            getSitePagePath(routeContext.siteKey, routeContext.locale, "thankyou")
+        )
+      );
     }
 
     return { ok: true, ...data };

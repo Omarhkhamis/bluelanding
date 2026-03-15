@@ -1,14 +1,16 @@
 import { saveCustomCodesAction } from "@/app/admin/actions";
 import { StatusNotice } from "@/components/admin/status-notice";
 import { getCustomCodes } from "@/lib/cms";
+import { normalizeSiteKey } from "@/lib/sites";
 
 export default async function AdminCustomCodesPage({
   searchParams
 }: {
-  searchParams: Promise<{ locale?: string; status?: string }>;
+  searchParams: Promise<{ locale?: string; site?: string; status?: string }>;
 }) {
-  const { locale = "en", status } = await searchParams;
-  const codes = await getCustomCodes();
+  const { locale = "en", site, status } = await searchParams;
+  const siteKey = normalizeSiteKey(site);
+  const codes = await getCustomCodes(siteKey);
   const headCode = codes.find((code) => code.placement === "HEAD");
   const bodyCode = codes.find((code) => code.placement === "BODY_END");
 
@@ -27,6 +29,7 @@ export default async function AdminCustomCodesPage({
       <StatusNotice status={status} />
 
       <form action={saveCustomCodesAction} className="admin-form">
+        <input type="hidden" name="site" value={siteKey} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="returnPath" value="/admin/custom-codes" />
         <input type="hidden" name="headId" value={headCode?.id || ""} />

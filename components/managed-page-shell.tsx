@@ -2,8 +2,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
 import { getPublicSiteContent } from "@/lib/cms";
+import { getSiteBasePath, type SiteKey } from "@/lib/sites";
 
 type ManagedPageShellProps = {
+  siteKey: SiteKey;
   locale: string;
   title: string;
   content: string;
@@ -17,12 +19,18 @@ function renderParagraphs(content: string) {
 }
 
 export async function ManagedPageShell({
+  siteKey,
   locale,
   title,
   content
 }: ManagedPageShellProps) {
-  const normalizedLocale = locale === "ru" ? "ru" : "en";
-  const siteContent = await getPublicSiteContent(normalizedLocale);
+  const normalizedLocale = locale === "ru" ? "ru" : locale;
+  const basePath = getSiteBasePath(siteKey, normalizedLocale);
+  const siteContent = await getPublicSiteContent(siteKey, normalizedLocale);
+  const pageNavLinks = siteContent.navLinks.map((link) => ({
+    ...link,
+    href: link.href.startsWith("#") ? `${basePath}${link.href}` : link.href
+  }));
   const activeHeader = siteContent.header2?.isActive ? siteContent.header2 : siteContent.header;
   const activeFooter = siteContent.footerSection2?.isActive
     ? siteContent.footerSection2
@@ -33,7 +41,8 @@ export async function ManagedPageShell({
       <SiteHeader
         logoUrl={siteContent.site.logoUrl}
         siteName={siteContent.site.siteName}
-        navLinks={siteContent.navLinks}
+        homeHref={basePath}
+        navLinks={pageNavLinks}
         footer={siteContent.footer}
         whatsappUrl={siteContent.site.whatsappUrl}
         section={activeHeader}
@@ -54,6 +63,8 @@ export async function ManagedPageShell({
       </main>
 
       <SiteFooter
+        siteKey={siteKey}
+        basePath={basePath}
         footer={siteContent.footer}
         navLinks={siteContent.navLinks}
         footerSection={activeFooter}

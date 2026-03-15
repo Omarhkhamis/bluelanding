@@ -5,11 +5,13 @@ import {
 } from "@/lib/data-leads";
 import { getSpinSubmissions } from "@/lib/cms";
 import { FormsDataNav } from "@/components/admin/forms-data-nav";
+import { buildAdminPath } from "@/lib/sites";
 
 export default async function AdminSpinDataPage({
   searchParams
 }: {
   searchParams: Promise<{
+    site?: string;
     locale?: string;
     order?: string;
     month?: string;
@@ -19,13 +21,17 @@ export default async function AdminSpinDataPage({
 }) {
   const filters = normalizeDataLeadsFilters(await searchParams);
   const records = await getSpinSubmissions({
+    siteKey: filters.siteKey,
     order: filters.order,
     month: filters.month,
     from: filters.from,
     to: filters.to
   });
   const exportQuery = buildDataLeadsQueryString(filters);
-  const resetHref = `/admin/spin-data?locale=${filters.locale}`;
+  const resetHref = buildAdminPath("/admin/spin-data", {
+    siteKey: filters.siteKey,
+    locale: filters.locale
+  });
 
   return (
     <>
@@ -34,9 +40,9 @@ export default async function AdminSpinDataPage({
           <div className="admin-eyebrow">Spin Data</div>
           <h1 className="admin-page-title">Submissions</h1>
           <p className="admin-help">
-            Total records across all locales: {records.length}
+            Total records for the selected site: {records.length}
           </p>
-          <FormsDataNav locale={filters.locale} current="spin-data" />
+          <FormsDataNav siteKey={filters.siteKey} locale={filters.locale} current="spin-data" />
         </div>
         <a
           href={`/admin/spin-data/export?${exportQuery}`}
@@ -47,6 +53,7 @@ export default async function AdminSpinDataPage({
       </div>
 
       <form method="get" className="admin-card admin-form">
+        <input type="hidden" name="site" value={filters.siteKey} />
         <input type="hidden" name="locale" value={filters.locale} />
 
         <div className="admin-data-filter-grid">
