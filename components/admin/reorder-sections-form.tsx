@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
+import { ArrowDown, ArrowUp, GripVertical, Power } from "lucide-react";
 import { saveReorderSectionsAction } from "@/app/admin/actions";
 
 type ReorderSection = {
@@ -41,8 +41,15 @@ export function ReorderSectionsForm({ siteKey, locale, sections }: ReorderSectio
             className="admin-card admin-reorder-item"
             style={{ boxShadow: "none" }}
             draggable
-            onDragStart={() => setDragIndex(index)}
-            onDragOver={(event) => event.preventDefault()}
+            onDragStart={(event) => {
+              setDragIndex(index);
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", section.key);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+            }}
             onDrop={() => {
               if (dragIndex === null || dragIndex === index) {
                 setDragIndex(null);
@@ -60,6 +67,7 @@ export function ReorderSectionsForm({ siteKey, locale, sections }: ReorderSectio
               name={`sections.${index}.isActive`}
               value={section.isActive ? "true" : ""}
             />
+            <input type="hidden" name={`sections.${index}.sortOrder`} value={index} />
 
             <div className="admin-reorder-main">
               <div className="admin-reorder-handle" aria-hidden="true">
@@ -72,6 +80,31 @@ export function ReorderSectionsForm({ siteKey, locale, sections }: ReorderSectio
               </div>
 
               <div className="admin-reorder-actions">
+                <span
+                  className={`admin-reorder-status ${
+                    section.isActive ? "admin-reorder-status-active" : ""
+                  }`}
+                >
+                  {section.isActive ? "Enabled" : "Disabled"}
+                </span>
+                <button
+                  type="button"
+                  className={`admin-reorder-toggle ${
+                    section.isActive ? "admin-reorder-toggle-active" : ""
+                  }`}
+                  onClick={() => {
+                    setItems((current) =>
+                      current.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, isActive: !item.isActive } : item
+                      )
+                    );
+                  }}
+                  aria-pressed={section.isActive}
+                  aria-label={`${section.isActive ? "Disable" : "Enable"} ${section.name}`}
+                >
+                  <Power className="h-4 w-4" />
+                  {section.isActive ? "Disable" : "Enable"}
+                </button>
                 <button
                   type="button"
                   className="admin-reorder-button"

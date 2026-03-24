@@ -34,6 +34,10 @@ export function SiteFooter({
   footerSection,
   whatsappUrl
 }: SiteFooterProps) {
+  if (!footerSection?.isActive) {
+    return null;
+  }
+
   if (footerSection?.key === "footer-2") {
     return (
       <FooterLpbm

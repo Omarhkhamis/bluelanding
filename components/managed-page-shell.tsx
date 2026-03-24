@@ -31,10 +31,12 @@ export async function ManagedPageShell({
     ...link,
     href: link.href.startsWith("#") ? `${basePath}${link.href}` : link.href
   }));
-  const activeHeader = siteContent.header2?.isActive ? siteContent.header2 : siteContent.header;
-  const activeFooter = siteContent.footerSection2?.isActive
-    ? siteContent.footerSection2
-    : siteContent.footerSection;
+  const activeHeader =
+    [siteContent.header2, siteContent.header].find((section) => section?.isActive) || null;
+  const activeFooter =
+    [siteContent.footerSection2, siteContent.footerSection].find(
+      (section) => section?.isActive
+    ) || null;
 
   return (
     <div className="min-h-screen bg-background">

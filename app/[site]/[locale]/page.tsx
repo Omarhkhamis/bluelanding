@@ -17,8 +17,75 @@ import { ServicesSection } from "@/components/sections/services-section";
 import { TeamSection } from "@/components/sections/team-section";
 import { TreatmentMatrixSection } from "@/components/sections/treatment-matrix-section";
 import { WhyChooseSection } from "@/components/sections/why-choose-section";
-import { getPublicSiteContent } from "@/lib/cms";
+import { getPublicSiteContent, type Section } from "@/lib/cms";
 import { getSiteBasePath, normalizeLocaleSegment, parseSiteKey } from "@/lib/sites";
+
+function getActiveVariant(...sections: Array<Section | null | undefined>) {
+  return sections.find((section): section is Section => Boolean(section?.isActive)) || null;
+}
+
+function renderSection(section: Section, whatsappUrl: string) {
+  switch (section.key) {
+    case "hero":
+    case "hero-2":
+      return <HeroSection key={section.key} section={section} whatsappUrl={whatsappUrl} />;
+    case "why-choose":
+      return <WhyChooseSection key={section.key} section={section} whatsappUrl={whatsappUrl} />;
+    case "services":
+      return <ServicesSection key={section.key} section={section} whatsappUrl={whatsappUrl} />;
+    case "team":
+      return <TeamSection key={section.key} section={section} />;
+    case "treatment-matrix":
+      return <TreatmentMatrixSection key={section.key} section={section} />;
+    case "consultation-virtual":
+    case "consultation-online":
+      return (
+        <ConsultationCtaSection
+          key={section.key}
+          section={section}
+          whatsappUrl={whatsappUrl}
+        />
+      );
+    case "before-after":
+      return <BeforeAfterSection key={section.key} section={section} whatsappUrl={whatsappUrl} />;
+    case "service-details":
+      return (
+        <ServiceDetailsSection key={section.key} section={section} whatsappUrl={whatsappUrl} />
+      );
+    case "certificates-gallery":
+      return <CertificatesGallerySection key={section.key} section={section} />;
+    case "google-reviews":
+      return (
+        <ReviewsSection
+          key={section.key}
+          section={section}
+          provider="google"
+          whatsappUrl={whatsappUrl}
+        />
+      );
+    case "trustpilot-reviews":
+      return (
+        <ReviewsSection
+          key={section.key}
+          section={section}
+          provider="trustpilot"
+          whatsappUrl={whatsappUrl}
+        />
+      );
+    case "hotel":
+      return <HotelSection key={section.key} section={section} />;
+    case "clinic-gallery":
+      return <ClinicGallerySection key={section.key} section={section} />;
+    case "lucky-spin":
+      return <LuckySpinSection key={section.key} section={section} whatsappUrl={whatsappUrl} />;
+    case "influencers":
+      return <InfluencersSection key={section.key} section={section} />;
+    case "faq":
+      return <FaqSection key={section.key} section={section} whatsappUrl={whatsappUrl} />;
+    default:
+      return null;
+  }
+}
 
 export default async function PublicHomePage({
   params
@@ -35,25 +102,23 @@ export default async function PublicHomePage({
   const normalizedLocale = normalizeLocaleSegment(locale);
   const basePath = getSiteBasePath(siteKey, normalizedLocale);
   const content = await getPublicSiteContent(siteKey, normalizedLocale);
-  const activeHeader = content.header2?.isActive ? content.header2 : content.header;
-  const activeHero = content.hero2?.isActive ? content.hero2 : content.hero;
-  const activeFooter = content.footerSection2?.isActive ? content.footerSection2 : content.footerSection;
+  const activeHeader = getActiveVariant(content.header2, content.header);
+  const activeHero = getActiveVariant(content.hero2, content.hero);
+  const activeFooter = getActiveVariant(content.footerSection2, content.footerSection);
+  const hiddenSectionKeys = new Set(["header", "header-2", "footer", "footer-2"]);
 
-  if (
-    !activeHero ||
-    !content.whyChoose ||
-    !content.servicesSection ||
-    !content.beforeAfter ||
-    !content.serviceDetails ||
-    !content.hotel ||
-    !content.clinicGallerySection ||
-    !content.consultationVirtual ||
-    !content.consultationOnline ||
-    !content.influencers ||
-    !content.faq
-  ) {
-    notFound();
+  if (activeHero?.key === "hero-2") {
+    hiddenSectionKeys.add("hero");
+  } else if (activeHero?.key === "hero") {
+    hiddenSectionKeys.add("hero-2");
+  } else {
+    hiddenSectionKeys.add("hero");
+    hiddenSectionKeys.add("hero-2");
   }
+
+  const orderedSections = content.sections.filter(
+    (section) => section.isActive && !hiddenSectionKeys.has(section.key)
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,61 +132,7 @@ export default async function PublicHomePage({
         section={activeHeader}
       />
       <main>
-        <HeroSection section={activeHero} whatsappUrl={content.site.whatsappUrl} />
-        <WhyChooseSection
-          section={content.whyChoose}
-          whatsappUrl={content.site.whatsappUrl}
-        />
-        <ServicesSection
-          section={content.servicesSection}
-          whatsappUrl={content.site.whatsappUrl}
-        />
-        {content.teamSection?.isActive ? (
-          <TeamSection section={content.teamSection} />
-        ) : null}
-        {content.treatmentMatrix?.isActive ? (
-          <TreatmentMatrixSection section={content.treatmentMatrix} />
-        ) : null}
-        <ConsultationCtaSection
-          section={content.consultationVirtual}
-          whatsappUrl={content.site.whatsappUrl}
-        />
-        <BeforeAfterSection
-          section={content.beforeAfter}
-          whatsappUrl={content.site.whatsappUrl}
-        />
-        <ServiceDetailsSection
-          section={content.serviceDetails}
-          whatsappUrl={content.site.whatsappUrl}
-        />
-        {content.certificatesGallery?.isActive ? (
-          <CertificatesGallerySection section={content.certificatesGallery} />
-        ) : null}
-        {content.googleReviews?.isActive ? (
-          <ReviewsSection
-            section={content.googleReviews}
-            provider="google"
-            whatsappUrl={content.site.whatsappUrl}
-          />
-        ) : null}
-        {content.trustpilotReviews?.isActive ? (
-          <ReviewsSection
-            section={content.trustpilotReviews}
-            provider="trustpilot"
-            whatsappUrl={content.site.whatsappUrl}
-          />
-        ) : null}
-        <HotelSection section={content.hotel} />
-        <ClinicGallerySection section={content.clinicGallerySection} />
-        {content.luckySpin?.isActive ? (
-          <LuckySpinSection section={content.luckySpin} whatsappUrl={content.site.whatsappUrl} />
-        ) : null}
-        <ConsultationCtaSection
-          section={content.consultationOnline}
-          whatsappUrl={content.site.whatsappUrl}
-        />
-        <InfluencersSection section={content.influencers} />
-        <FaqSection section={content.faq} whatsappUrl={content.site.whatsappUrl} />
+        {orderedSections.map((section) => renderSection(section, content.site.whatsappUrl))}
       </main>
       <SiteFooter
         siteKey={siteKey}

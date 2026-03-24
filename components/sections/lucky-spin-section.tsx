@@ -6,6 +6,7 @@ import "react-phone-number-input/style.css";
 import type { Section } from "@/lib/cms";
 import {
   buildFormPayload,
+  openSubmissionPopup,
   submitFormPayload,
   validateFormPayload
 } from "@/lib/form-submit";
@@ -177,10 +178,7 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
     setSelectedPrize("");
     setResult(spinLoadingLabel);
 
-    const popup =
-      typeof window !== "undefined"
-        ? window.open("", "_blank", "noopener,noreferrer")
-        : null;
+    const popup = openSubmissionPopup();
     const popupOptions = popup ? { popup } : {};
     const selectedIndex = Math.floor(Math.random() * prizes.length);
     const chosenPrize = prizes[selectedIndex] || "";

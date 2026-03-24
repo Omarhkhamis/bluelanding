@@ -28,6 +28,10 @@ export function SiteHeader({
   whatsappUrl,
   section
 }: SiteHeaderProps) {
+  if (!section?.isActive) {
+    return null;
+  }
+
   if (section?.key === "header-2") {
     return (
         <HeaderLpbm

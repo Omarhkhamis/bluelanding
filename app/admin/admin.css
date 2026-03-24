@@ -503,6 +503,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .admin-reorder-button {
@@ -520,6 +521,43 @@
 .admin-reorder-button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.admin-reorder-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-reorder-status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.admin-reorder-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  border-radius: 0.9rem;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-reorder-toggle-active {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
 }
 
 .admin-icon-trigger-row {

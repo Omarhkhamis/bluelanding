@@ -99,6 +99,29 @@ function pickFirstFilled(payload: FormPayload, keys: string[]) {
   return "";
 }
 
+export function openSubmissionPopup() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const popup = window.open("", "_blank");
+
+  if (!popup) {
+    return null;
+  }
+
+  try {
+    popup.opener = null;
+    popup.document.title = "Redirecting...";
+    popup.document.body.innerHTML =
+      '<div style="font-family:Arial,sans-serif;padding:24px;color:#0f172a">Redirecting to WhatsApp...</div>';
+  } catch {
+    // Ignore popup initialization errors and continue with a best-effort redirect later.
+  }
+
+  return popup;
+}
+
 export function buildFormPayload(
   form: HTMLFormElement,
   source: string,
@@ -202,9 +225,7 @@ export async function submitFormPayload(payload: FormPayload, options: SubmitOpt
   const popup =
     options.popup !== undefined
       ? options.popup
-      : typeof window !== "undefined"
-        ? window.open("", "_blank", "noopener,noreferrer")
-        : null;
+      : openSubmissionPopup();
   const normalizedPayload = validation.payload;
 
   try {
@@ -226,7 +247,7 @@ export async function submitFormPayload(payload: FormPayload, options: SubmitOpt
 
     if (data.redirectTo) {
       if (popup) {
-        popup.location.href = data.redirectTo;
+        popup.location.replace(data.redirectTo);
       } else if (typeof window !== "undefined") {
         window.open(data.redirectTo, "_blank", "noopener,noreferrer");
       }
