@@ -908,9 +908,9 @@ async function seedCms() {
       [
         defaultSiteKey,
         "en",
-        "CevreDent",
-        "CevreDent - Dental Clinic in Turkey",
-        "Experience world-class dental treatments with CevreDent.",
+        "Blue Medical Plus",
+        "Your comfort is our expertise.",
+        "Over 16,000 happy patients around the world have placed their trust in us. Begin your journey to a new smile with us.",
         "/assets/images/image-005.png",
         "/assets/images/image-004.ico",
         whatsappUrl
@@ -926,11 +926,11 @@ async function seedCms() {
       [
         defaultSiteKey,
         "en",
-        "/assets/images/image-027.png",
-        "+90 551 862 25 25",
-        "info@cevredent.com",
-        "Mecidiyeköy Mahallesi, Büyükdere Cd. Ocak Apt No:91 Kat 2 Daire:2, 34387 Şişli/İstanbul",
-        "© 2024 CevreDent Clinic. All rights reserved."
+        "/assets/images/image-005.png",
+        "+90 552 800 70 00",
+        "info@bluemedicalplus.com",
+        "Beypalas Sitesi A Blok No: 6/1 Ic Kapi No: 65 Esenyurt / Istanbul",
+        "© 2026 Blue Medical Plus. All rights reserved."
       ]
     );
 
@@ -953,12 +953,12 @@ async function seedCms() {
       [
         defaultSiteKey,
         "en",
-        "CevreDent - Dental Clinic in Turkey",
-        "Affordable dental implants, veneers, crowns, and smile makeovers in Turkey.",
+        "Blue Medical Plus - Your comfort is our expertise.",
+        "Over 16,000 happy patients around the world have placed their trust in us. Begin your journey to a new smile with us.",
         "dental clinic turkey, dental implants, veneers, hollywood smile",
         "/assets/images/image-001.png",
         "index,follow",
-        "https://dental.cevredentalturkey.com"
+        "https://lp.bluemedicalplus.com"
       ]
     );
 
@@ -994,7 +994,7 @@ async function seedCms() {
         sortOrder: 0,
         heading: "Dental Clinic in Turkey",
         subheading: "Enhance Your Smile",
-        description: "with CevreDent Clinic's Affordable Services",
+        description: "with Blue Medical Plus",
         buttonLabel: "Get the Best Dental Solution",
         buttonUrl: whatsappUrl,
         items: [
@@ -1067,7 +1067,7 @@ async function seedCms() {
         name: "Service Details",
         sectionType: "cards",
         sortOrder: 4,
-        heading: "CevreDent Service Details Content",
+        heading: "Blue Medical Plus Service Details",
         buttonLabel: "Get Price Information",
         buttonUrl: whatsappUrl,
         items: serviceDetailCards.map((item, index) => ({
@@ -1180,7 +1180,7 @@ async function seedCms() {
       "/assets/images/image-023.webp",
       "/assets/images/image-024.webp",
       "/assets/images/image-025.webp",
-      "/assets/images/image-027.png"
+      "/assets/images/image-005.png"
     ];
 
     for (const mediaUrl of mediaFiles) {
@@ -1201,7 +1201,7 @@ async function seedCms() {
         INSERT INTO admin_users (name, email, password_hash, role, is_active)
         VALUES ($1, $2, $3, 'super_admin', TRUE)
       `,
-      ["Primary Admin", "admin@cevredent.local", bcrypt.hashSync("Admin123!", 10)]
+      ["Primary Admin", "admin@bluemedicalplus.local", bcrypt.hashSync("Admin123!", 10)]
     );
   });
 }

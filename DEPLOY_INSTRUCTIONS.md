@@ -10,7 +10,7 @@ su - deploy
 cd /var/www/bluelanding
 git pull origin main
 test -n "$DATABASE_URL" && echo "DATABASE_URL is set" || (echo "DATABASE_URL is missing" && exit 1)
-npm install
+npm ci
 npm run build
 pm2 restart bluelanding --update-env
 ```
@@ -22,7 +22,15 @@ pm2 restart bluelanding --update-env
   - missing tables are created with `CREATE TABLE IF NOT EXISTS`
   - missing columns are added with `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`
   - existing online data must not be deleted or reset
-- After deploy, open the live site or `/admin` once to trigger the safe database check/update path, then review the logs:
+- After deploy, open the live site or `/admin` once to trigger the safe database check/update path, then review the logs.
+- For the current `hollywood-smile` live site, use:
+
+```bash
+https://lp.bluemedicalplus.com/hollywood-smile/en
+https://lp.bluemedicalplus.com/admin
+```
+
+- Then review the logs:
 
 ```bash
 pm2 logs bluelanding --lines 100
@@ -49,4 +57,5 @@ npx prisma db push --force-reset
 - The PM2 process name is `bluelanding`.
 - If `git pull` fails, inspect server-side local changes first with `git status`.
 - The current project does not include an active `schema.prisma` file yet, so Prisma commands above are only for future Prisma-based schema management.
+- Runtime media uploads under `public/uploads` may exist only on the production server. Do not delete them when cleaning the worktree.
 - give me results in arabic after you finish

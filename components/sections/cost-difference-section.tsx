@@ -31,73 +31,79 @@ export function CostDifferenceSection({
   }
 
   return (
-    <section
-      id="cost-difference"
-      className="relative overflow-hidden bg-gradient-to-r from-[#f5f5f4] via-[#e7e7e6] to-[#f5f5f4] pt-10"
-      style={{ fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}
-    >
-      <div className="pointer-events-none absolute top-10 z-0 h-px w-[200vw] -translate-x-[3.333333%] rotate-[-10deg] bg-gradient-to-r from-transparent via-[#8e8171]/40 to-transparent opacity-60 md:-left-16 md:top-[50rem] md:w-[120vw] md:rotate-[70deg]" />
+    <section id="cost-difference" className="section-padding relative overflow-hidden bg-background">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-24 top-8 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -right-24 bottom-8 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute inset-x-0 top-20 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
+      </div>
 
-      <div className="mx-auto max-w-screen-2xl px-6 lg:px-10">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div className="relative z-10 space-y-6 py-8 lg:max-w-4xl lg:py-24 lg:pr-24">
-            <h2 className="relative z-10 text-4xl font-extralight leading-snug text-[#0a0908] lg:text-5xl">
+      <div className="container-dental relative z-10">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,520px)] lg:gap-14">
+          <div className="space-y-6 lg:pr-8">
+            <h2 className="text-3xl font-bold leading-tight text-dental-navy md:text-5xl">
               {headingLine1}
               {headingLine2 ? (
                 <>
                   <br />
-                  <span className="relative inline-block">
+                  <span className="relative inline-block text-primary">
                     {headingLine2}
-                    <span className="absolute left-0 right-0 -bottom-1 h-px rounded-full bg-[#2f2c27]" />
+                    <span className="absolute left-0 right-0 -bottom-1 h-px rounded-full bg-primary/35" />
                   </span>
                 </>
               ) : null}
             </h2>
 
             {paragraphOne ? (
-              <p className="relative z-10 leading-relaxed text-[#1b1a19]">{paragraphOne}</p>
+              <p className="max-w-2xl text-base leading-8 text-foreground/75 md:text-lg">
+                {paragraphOne}
+              </p>
             ) : null}
 
             {paragraphTwo ? (
-              <p className="relative z-10 leading-relaxed text-[#1b1a19]">{paragraphTwo}</p>
+              <p className="max-w-2xl text-base leading-8 text-foreground/75 md:text-lg">
+                {paragraphTwo}
+              </p>
             ) : null}
 
             {ctaUrl ? (
               <a
                 href={ctaUrl}
                 {...getWhatsAppLinkProps(ctaUrl)}
-                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#27241f] to-[#2f2c27] px-4 py-3 text-[11.5px] font-medium uppercase tracking-[0.13em] text-white shadow-[0_10px_10px_rgba(0,0,0,0.09)] transition-transform duration-200 ease-out hover:from-[#1f1c18] hover:to-[#2f2c27]"
+                className="inline-flex w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-dental transition-all duration-300 hover:shadow-dental-lg md:w-auto md:max-w-none md:px-8 md:py-4 md:text-base"
               >
-                <MessageCircle className="mr-2 h-4 w-4" aria-hidden="true" />
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
                 {buttonLabel}
               </a>
             ) : null}
           </div>
 
-          <div className="relative lg:static">
-            <div className="relative h-[360px] sm:h-[420px] lg:absolute lg:inset-y-0 lg:right-0 lg:h-auto lg:w-1/2">
+          <div className="relative mx-auto w-full max-w-[520px]">
+            <div className="relative h-[360px] overflow-hidden rounded-[2rem] border border-primary/10 bg-white shadow-[0_24px_70px_rgba(25,40,96,0.12)] sm:h-[420px] lg:h-[520px]">
               {mainImage ? (
                 <img
                   src={mainImage}
                   alt={mainImageAlt}
-                  className="absolute inset-0 h-full w-full object-cover object-right"
+                  className="h-full w-full object-cover"
                 />
               ) : null}
 
-              <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[55%] bg-gradient-to-r from-[#e7e7e6] via-[#e7e7e6]/60 to-transparent md:block" />
+              <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[48%] bg-gradient-to-r from-background/85 via-background/25 to-transparent md:block" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-dental-navy/10 to-transparent" />
+            </div>
 
-              {detailImage ? (
-                <div className="absolute -top-40 right-0 flex h-28 w-28 items-center justify-center rounded-full border border-white/35 bg-white/25 backdrop-blur-sm md:bottom-14 md:right-[24vh] md:top-auto md:h-[10.5rem] md:w-[10.5rem]">
+            {detailImage ? (
+              <div className="absolute -bottom-6 right-6 flex h-28 w-28 items-center justify-center rounded-full border-4 border-white bg-white p-2 shadow-2xl md:-bottom-8 md:right-8 md:h-40 md:w-40">
+                <div className="absolute inset-0 rounded-full bg-primary/8" />
+                <div className="relative h-full w-full overflow-hidden rounded-full">
                   <img
                     src={detailImage}
                     alt={detailImageAlt}
-                    className="h-24 w-24 rounded-full object-cover md:h-36 md:w-36"
+                    className="h-full w-full rounded-full object-cover"
                   />
                 </div>
-              ) : null}
-            </div>
-
-            <div className="hidden lg:block lg:h-[620px]" />
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

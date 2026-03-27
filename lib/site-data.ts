@@ -1,7 +1,7 @@
 import { defaultFooterNavItems } from "@/lib/footer-nav";
 
 export const whatsappUrl =
-  "https://api.whatsapp.com/send?phone=905518622525&text=What%20are%20the%20options%20and%20pricing%20for%20dental%20treatment";
+  "https://wa.me/905528007000?text=Hello%2C%20I%20am%20interested%20in%20dental%20implants.%20Could%20you%20please%20provide%20details%20about%20the%20procedure%2C%20timeline%2C%20and%20price%3F";
 
 export const navLinks = [
   { href: "#why", label: "Why Choose" },
@@ -153,7 +153,7 @@ export const beforeAfterItems = [
 ].map((image, index) => ({
   image,
   title: "Snap on Smile",
-  subtitle: "CevreDent",
+  subtitle: "Blue Medical Plus",
   alt: `Before & After ${index + 1}`
 }));
 
@@ -161,7 +161,7 @@ export const serviceDetailCards = [
   {
     title: "All In One Packages",
     description:
-      "Discover CevreDent's full range of dental services, including restorations, procedures, and solutions designed to suit all of your dental requirements."
+      "Discover Blue Medical Plus's full range of dental services, including restorations, procedures, and solutions designed to suit all of your dental requirements."
   },
   {
     title: "Schedule A Consultation",
@@ -235,9 +235,9 @@ export const faqItems = [
 }));
 
 export const socialLinks = [
-  { href: "https://www.facebook.com/cevredent/", label: "Facebook" },
-  { href: "https://www.instagram.com/cevredent/", label: "Instagram" },
-  { href: "https://www.tiktok.com/@cevredent", label: "TikTok" }
+  { href: "https://www.instagram.com/bluemedicalplus/", label: "Instagram" },
+  { href: "https://www.facebook.com/bluemedicalplus/", label: "Facebook" },
+  { href: "https://www.youtube.com/@bluemedicalplus/", label: "YouTube" }
 ];
 
 export const lpbmHeaderDefaults = {
