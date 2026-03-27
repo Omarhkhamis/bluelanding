@@ -289,6 +289,20 @@ export const lpbmHeroDefaults = {
   formSubmitText: "Submit Request"
 };
 
+export const costDifferenceDefaults = {
+  headingLine1: "Implantology &",
+  headingLine2: "Full-Arch Excellence",
+  paragraphs: [
+    "At BM TURKIYE, we rebuild confident smiles with guided implant surgery, immediate loading when suitable, and precision prosthetics tailored to each jaw.",
+    "From single-tooth implants to All-on-4/All-on-6 rehabilitations, our surgeons and prosthodontists focus on long-term stability, chewing comfort, and natural aesthetics."
+  ],
+  buttonText: "Get Implant Quote →",
+  mainImage: "/uploads/cost-difference/smile1.jpg",
+  mainImageAlt: "Dental implant restoration result",
+  detailImage: "/uploads/cost-difference/smile2.jpg",
+  detailImageAlt: "Implant-supported restoration detail"
+};
+
 export const treatmentMatrixDefaults = {
   kicker: "Treatment Matrix",
   title: "Implant Options at a Glance",

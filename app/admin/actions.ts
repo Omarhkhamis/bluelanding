@@ -441,6 +441,21 @@ export async function saveSectionAction(formData: FormData) {
     ).trim();
   }
 
+  if (key === "cost-difference") {
+    normalizedSectionSettings.paragraph2 = String(
+      formData.get("costDifferenceParagraph2") || ""
+    ).trim();
+    normalizedSectionSettings.mainImageAlt = String(
+      formData.get("costDifferenceMainImageAlt") || ""
+    ).trim();
+    normalizedSectionSettings.detailImage = String(
+      formData.get("costDifferenceDetailImage") || ""
+    ).trim();
+    normalizedSectionSettings.detailImageAlt = String(
+      formData.get("costDifferenceDetailImageAlt") || ""
+    ).trim();
+  }
+
   await updateSection({
     key,
     siteKey,

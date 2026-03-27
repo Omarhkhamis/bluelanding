@@ -6,6 +6,7 @@ import { BeforeAfterSection } from "@/components/sections/before-after-section";
 import { ClinicGallerySection } from "@/components/sections/clinic-gallery-section";
 import { ConsultationCtaSection } from "@/components/sections/consultation-cta-section";
 import { CertificatesGallerySection } from "@/components/sections/certificates-gallery-section";
+import { CostDifferenceSection } from "@/components/sections/cost-difference-section";
 import { FaqSection } from "@/components/sections/faq-section";
 import { HeroSection } from "@/components/sections/hero-section";
 import { HotelSection } from "@/components/sections/hotel-section";
@@ -52,6 +53,8 @@ function renderSection(section: Section, whatsappUrl: string) {
       return (
         <ServiceDetailsSection key={section.key} section={section} whatsappUrl={whatsappUrl} />
       );
+    case "cost-difference":
+      return <CostDifferenceSection key={section.key} section={section} whatsappUrl={whatsappUrl} />;
     case "certificates-gallery":
       return <CertificatesGallerySection key={section.key} section={section} />;
     case "google-reviews":

@@ -109,7 +109,7 @@ export function InfluencersSection({ section }: InfluencersSectionProps) {
           <h2 className="heading-secondary mb-12 text-center">
             {section.heading}
           </h2>
-          <div className="relative mx-auto max-w-7xl px-8 md:px-10">
+          <div className="text-center relative mx-auto max-w-7xl px-8 md:px-10">
             <div className="overflow-hidden" ref={emblaRef}>
               <div className="flex -ml-4">
                 {videos.map((video) => (
@@ -130,7 +130,7 @@ export function InfluencersSection({ section }: InfluencersSectionProps) {
                       />
                       <div className="absolute inset-0 bg-slate-950/28 transition group-hover:bg-slate-950/18" />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/92 text-dental-navy shadow-lg">
+                        <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-white/10 text-white shadow-lg backdrop-blur-sm">
                           <Play className="ml-1 h-7 w-7 fill-current" />
                         </span>
                       </div>

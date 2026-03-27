@@ -78,6 +78,8 @@ function splitPrizeLabel(label: string) {
 }
 
 export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps) {
+  const wheelTextFontSize = 46;
+  const wheelTextLineHeight = 50;
   const settings = (section.settings || {}) as Record<string, unknown>;
   const prizes = ((settings.prizes as string[] | undefined) || [])
     .map((value) => String(value || "").trim())
@@ -128,7 +130,7 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
         const point = polarToCartesian(500, 500, 310, centerAngle);
         const lines = splitPrizeLabel(prize);
         const rotationAngle = normalizeTextRotation(centerAngle - 90);
-        const lineHeight = 58;
+        const lineHeight = wheelTextLineHeight;
         const firstOffset = lines.length > 1 ? -((lines.length - 1) * lineHeight) / 2 : 0;
 
         return {
@@ -140,7 +142,7 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
           firstOffset
         };
       }),
-    [anglePerSlice, prizes]
+    [anglePerSlice, prizes, wheelTextLineHeight]
   );
 
   if (!prizes.length) {
@@ -268,7 +270,7 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
                   x={slice.x}
                   y={slice.y}
                   fill="rgba(255,255,255,0.97)"
-                  fontSize="54"
+                  fontSize={wheelTextFontSize}
                   fontWeight="700"
                   textAnchor="middle"
                   dominantBaseline="middle"
@@ -279,7 +281,7 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
                     <tspan
                       key={`${slice.prize}-${lineIndex}`}
                       x={slice.x}
-                      dy={lineIndex === 0 ? slice.firstOffset : 58}
+                      dy={lineIndex === 0 ? slice.firstOffset : wheelTextLineHeight}
                     >
                       {line}
                     </tspan>

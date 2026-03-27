@@ -48,6 +48,7 @@ export default async function AdminSectionEditorPage({
   const isTrustpilotReviewsSection = section.key === "trustpilot-reviews";
   const isClinicGallerySection = section.key === "clinic-gallery";
   const isLuckySpinSection = section.key === "lucky-spin";
+  const isCostDifferenceSection = section.key === "cost-difference";
   const isInfluencersSection = section.key === "influencers";
   const isHotelSection = section.key === "hotel";
   const isReviewsSection = isGoogleReviewsSection || isTrustpilotReviewsSection;
@@ -87,6 +88,8 @@ export default async function AdminSectionEditorPage({
   const treatmentMatrixSettings =
     section.settings && typeof section.settings === "object" ? section.settings : {};
   const luckySpinSettings =
+    section.settings && typeof section.settings === "object" ? section.settings : {};
+  const costDifferenceSettings =
     section.settings && typeof section.settings === "object" ? section.settings : {};
   const hotelName = String(hotelSettings.hotelName || "Mercure Hotel");
   const hotelStars = Math.min(5, Math.max(1, Number(hotelSettings.hotelStars) || 5));
@@ -991,6 +994,109 @@ export default async function AdminSectionEditorPage({
               </button>
             </div>
           </section>
+        ) : isCostDifferenceSection ? (
+          <section className="admin-card admin-form">
+            <div className="admin-card-header">
+              <div>
+                <div className="admin-eyebrow">Section</div>
+                <h2>Cost Difference details</h2>
+              </div>
+              <label className="admin-checkbox">
+                <input type="checkbox" name="isActive" defaultChecked={section.isActive} />
+                Enabled
+              </label>
+            </div>
+
+            <input type="hidden" name="name" value={section.name} />
+
+            <div className="admin-form-grid">
+              <div className="admin-field">
+                <label htmlFor="heading">Heading line 1</label>
+                <input id="heading" name="heading" defaultValue={section.heading} className="admin-input" />
+              </div>
+              <div className="admin-field">
+                <label htmlFor="subheading">Heading line 2</label>
+                <input
+                  id="subheading"
+                  name="subheading"
+                  defaultValue={section.subheading}
+                  className="admin-input"
+                />
+              </div>
+              <div className="admin-field">
+                <label htmlFor="buttonLabel">Button label</label>
+                <input
+                  id="buttonLabel"
+                  name="buttonLabel"
+                  defaultValue={section.buttonLabel}
+                  className="admin-input"
+                />
+              </div>
+              <div className="admin-field">
+                <label htmlFor="buttonUrl">Button URL</label>
+                <input
+                  id="buttonUrl"
+                  name="buttonUrl"
+                  defaultValue={section.buttonUrl}
+                  className="admin-input"
+                />
+              </div>
+              <MediaUrlField
+                name="imageUrl"
+                label="Main image URL"
+                defaultValue={section.imageUrl}
+              />
+              <MediaUrlField
+                name="costDifferenceDetailImage"
+                label="Detail image URL"
+                defaultValue={String(costDifferenceSettings.detailImage || "")}
+              />
+              <div className="admin-field">
+                <label htmlFor="costDifferenceMainImageAlt">Main image alt text</label>
+                <input
+                  id="costDifferenceMainImageAlt"
+                  name="costDifferenceMainImageAlt"
+                  defaultValue={String(costDifferenceSettings.mainImageAlt || "")}
+                  className="admin-input"
+                />
+              </div>
+              <div className="admin-field">
+                <label htmlFor="costDifferenceDetailImageAlt">Detail image alt text</label>
+                <input
+                  id="costDifferenceDetailImageAlt"
+                  name="costDifferenceDetailImageAlt"
+                  defaultValue={String(costDifferenceSettings.detailImageAlt || "")}
+                  className="admin-input"
+                />
+              </div>
+            </div>
+
+            <div className="admin-field">
+              <label htmlFor="description">Paragraph 1</label>
+              <textarea
+                id="description"
+                name="description"
+                defaultValue={section.description}
+                className="admin-textarea"
+              />
+            </div>
+
+            <div className="admin-field">
+              <label htmlFor="costDifferenceParagraph2">Paragraph 2</label>
+              <textarea
+                id="costDifferenceParagraph2"
+                name="costDifferenceParagraph2"
+                defaultValue={String(costDifferenceSettings.paragraph2 || "")}
+                className="admin-textarea"
+              />
+            </div>
+
+            <div className="admin-actions">
+              <button type="submit" className="admin-button">
+                Save section
+              </button>
+            </div>
+          </section>
         ) : isBeforeAfterSection ? (
           <section className="admin-card admin-form">
             <div className="admin-card-header">
@@ -1167,6 +1273,7 @@ export default async function AdminSectionEditorPage({
         isAnyHeaderSection ||
         isAnyFooterSection ||
         isConsultationSection ||
+        isCostDifferenceSection ||
         isTreatmentMatrixSection ||
         isLuckySpinSection ? null : (
           <section className="admin-card admin-form">

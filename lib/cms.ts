@@ -10,6 +10,7 @@ import {
   beforeAfterItems,
   certificatesGalleryDefaults,
   clinicGallery,
+  costDifferenceDefaults,
   faqItems,
   googleReviewsDefaults,
   heroGridImages,
@@ -331,6 +332,24 @@ function getExtendedSectionSeeds(): SeedSection[] {
           sortOrder: 100 + index
         }))
       ]
+    },
+    {
+      key: "cost-difference",
+      name: "Cost Difference",
+      sectionType: "static",
+      sortOrder: 1,
+      heading: costDifferenceDefaults.headingLine1,
+      subheading: costDifferenceDefaults.headingLine2,
+      description: costDifferenceDefaults.paragraphs[0],
+      buttonLabel: costDifferenceDefaults.buttonText,
+      buttonUrl: whatsappUrl,
+      imageUrl: costDifferenceDefaults.mainImage,
+      settings: {
+        paragraph2: costDifferenceDefaults.paragraphs[1],
+        mainImageAlt: costDifferenceDefaults.mainImageAlt,
+        detailImage: costDifferenceDefaults.detailImage,
+        detailImageAlt: costDifferenceDefaults.detailImageAlt
+      }
     },
     {
       key: "footer",
