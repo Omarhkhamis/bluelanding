@@ -44,7 +44,15 @@ export function getSafeWhatsAppUrl(url: string) {
   return isWhatsAppUrl(value) ? value : getFallbackWhatsAppUrl();
 }
 
-export function buildWhatsAppApiUrl(url: string, extraText = "") {
+type BuildWhatsAppApiUrlOptions = {
+  replaceText?: boolean;
+};
+
+export function buildWhatsAppApiUrl(
+  url: string,
+  extraText = "",
+  options: BuildWhatsAppApiUrlOptions = {}
+) {
   const safeUrl = getSafeWhatsAppUrl(url);
   let phone = "";
   let existingText = "";
@@ -66,9 +74,10 @@ export function buildWhatsAppApiUrl(url: string, extraText = "") {
   }
 
   const nextUrl = new URL("https://api.whatsapp.com/send/");
-  const mergedText = [existingText.trim(), String(extraText || "").trim()]
-    .filter(Boolean)
-    .join("\n\n");
+  const nextText = String(extraText || "").trim();
+  const mergedText = options.replaceText
+    ? nextText
+    : [existingText.trim(), nextText].filter(Boolean).join("\n\n");
 
   nextUrl.searchParams.set("phone", normalizeWhatsAppPhone(phone));
   if (mergedText) {

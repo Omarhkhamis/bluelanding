@@ -3,7 +3,6 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import bcrypt from "bcryptjs";
-import { newDb } from "pg-mem";
 import { Pool, type PoolClient } from "pg";
 import {
   badges,
@@ -485,6 +484,7 @@ async function insertSeedSection(
         site_key, section_key, locale, name, section_type, sort_order, is_active, heading,
         subheading, description, button_label, button_url, image_url, settings_json
       ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8, $9, $10, $11, $12, $13::jsonb)
+      ON CONFLICT (site_key, section_key, locale) DO NOTHING
     `,
     [
       siteKey,
@@ -539,24 +539,26 @@ type AdminAuthUser = {
   isActive: boolean;
 };
 
+function createDatabasePool() {
+  return new Pool({
+    connectionString: process.env.DATABASE_URL
+  });
+}
+
 function getPool() {
-  const globalScope = globalThis as unknown as { __cmsPool?: Pool };
+  const globalScope = globalThis as unknown as {
+    __cmsPool?: Pool;
+  };
 
   if (globalScope.__cmsPool) {
     return globalScope.__cmsPool;
   }
 
-  let pool: Pool;
-
-  if (process.env.DATABASE_URL) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL
-    });
-  } else {
-    const memoryDb = newDb();
-    const adapter = memoryDb.adapters.createPg();
-    pool = new adapter.Pool();
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is required.");
   }
+
+  const pool = createDatabasePool();
 
   globalScope.__cmsPool = pool;
   return pool;
@@ -564,6 +566,10 @@ function getPool() {
 
 const pool = getPool();
 let initPromise: Promise<void> | null = null;
+const localeContentPromises = new Map<string, Promise<void>>();
+
+const legacyCevreWhatsAppUrl =
+  "https://api.whatsapp.com/send?phone=905518622525&text=What%20are%20the%20options%20and%20pricing%20for%20dental%20treatment";
 
 function parseJson<T>(value: unknown): T | null {
   if (!value) {
@@ -659,6 +665,18 @@ async function withTransaction<T>(callback: (client: PoolClient) => Promise<T>) 
   } finally {
     client.release();
   }
+}
+
+async function lockCmsScope(
+  client: PoolClient,
+  scope: string,
+  siteKey: SiteKey,
+  locale: string
+) {
+  await client.query("SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))", [
+    scope,
+    `${siteKey}:${locale}`
+  ]);
 }
 
 async function initCms() {
@@ -875,6 +893,8 @@ async function initCms() {
         await seedCms();
       }
 
+      await normalizeLegacyCevreBranding();
+
       for (const siteKey of supportedSiteKeys) {
         if (siteKey !== defaultSiteKey) {
           await ensureSiteBaseContent(siteKey);
@@ -882,10 +902,188 @@ async function initCms() {
 
         await backfillDefaultPages(siteKey);
       }
-    })();
+    })().catch((error) => {
+      initPromise = null;
+      throw error;
+    });
   }
 
   return initPromise;
+}
+
+async function normalizeLegacyCevreBranding() {
+  await withTransaction(async (client) => {
+    await client.query(
+      `
+        UPDATE site_settings
+        SET
+          site_name = CASE
+            WHEN site_name = 'CevreDent' THEN 'Blue Medical Plus'
+            ELSE site_name
+          END,
+          site_title = CASE
+            WHEN site_title = 'CevreDent - Dental Clinic in Turkey'
+              THEN 'Your comfort is our expertise.'
+            ELSE site_title
+          END,
+          site_description = CASE
+            WHEN site_description = 'Experience world-class dental treatments with CevreDent.'
+              THEN 'Over 16,000 happy patients around the world have placed their trust in us. Begin your journey to a new smile with us.'
+            ELSE site_description
+          END,
+          whatsapp_url = CASE
+            WHEN whatsapp_url = $1 THEN $2
+            ELSE whatsapp_url
+          END,
+          updated_at = NOW()
+        WHERE
+          site_name = 'CevreDent'
+          OR site_title = 'CevreDent - Dental Clinic in Turkey'
+          OR site_description = 'Experience world-class dental treatments with CevreDent.'
+          OR whatsapp_url = $1
+      `,
+      [legacyCevreWhatsAppUrl, whatsappUrl]
+    );
+
+    await client.query(
+      `
+        UPDATE footer_settings
+        SET
+          email = CASE
+            WHEN email = 'info@cevredent.com' THEN 'info@bluemedicalplus.com'
+            ELSE email
+          END,
+          address = CASE
+            WHEN address = 'Mecidiyeköy Mahallesi, Büyükdere Cd. Ocak Apt No:91 Kat 2 Daire:2, 34387 Şişli/İstanbul'
+              THEN 'Beypalas Sitesi A Blok No: 6/1 Ic Kapi No: 65 Esenyurt / Istanbul'
+            ELSE address
+          END,
+          copyright_text = CASE
+            WHEN copyright_text = '© 2024 CevreDent Clinic. All rights reserved.'
+              THEN '© 2026 Blue Medical Plus. All rights reserved.'
+            ELSE copyright_text
+          END,
+          updated_at = NOW()
+        WHERE
+          email = 'info@cevredent.com'
+          OR address = 'Mecidiyeköy Mahallesi, Büyükdere Cd. Ocak Apt No:91 Kat 2 Daire:2, 34387 Şişli/İstanbul'
+          OR copyright_text = '© 2024 CevreDent Clinic. All rights reserved.'
+      `
+    );
+
+    await client.query(
+      `
+        UPDATE social_links
+        SET
+          platform = CASE
+            WHEN url = 'https://www.instagram.com/cevredent/' THEN 'instagram'
+            WHEN url = 'https://www.facebook.com/cevredent/' THEN 'facebook'
+            WHEN url = 'https://www.tiktok.com/@cevredent' THEN 'youtube'
+            ELSE platform
+          END,
+          label = CASE
+            WHEN url = 'https://www.instagram.com/cevredent/' THEN 'Instagram'
+            WHEN url = 'https://www.facebook.com/cevredent/' THEN 'Facebook'
+            WHEN url = 'https://www.tiktok.com/@cevredent' THEN 'YouTube'
+            ELSE label
+          END,
+          url = CASE
+            WHEN url = 'https://www.instagram.com/cevredent/'
+              THEN 'https://www.instagram.com/bluemedicalplus/'
+            WHEN url = 'https://www.facebook.com/cevredent/'
+              THEN 'https://www.facebook.com/bluemedicalplus/'
+            WHEN url = 'https://www.tiktok.com/@cevredent'
+              THEN 'https://www.youtube.com/@bluemedicalplus/'
+            ELSE url
+          END
+        WHERE url IN (
+          'https://www.instagram.com/cevredent/',
+          'https://www.facebook.com/cevredent/',
+          'https://www.tiktok.com/@cevredent'
+        )
+      `
+    );
+
+    await client.query(
+      `
+        UPDATE seo_settings
+        SET
+          meta_title = CASE
+            WHEN meta_title IN (
+              'CevreDent - Dental Clinic in Turkey',
+              'Blue - Dental Clinic in Turkey'
+            )
+              THEN 'Blue Medical Plus - Your comfort is our expertise.'
+            ELSE meta_title
+          END,
+          meta_description = CASE
+            WHEN meta_description = 'Affordable dental implants, veneers, crowns, and smile makeovers in Turkey.'
+              THEN 'Over 16,000 happy patients around the world have placed their trust in us. Begin your journey to a new smile with us.'
+            ELSE meta_description
+          END,
+          canonical_url = CASE
+            WHEN canonical_url = 'https://dental.cevredentalturkey.com'
+              THEN 'https://lp.bluemedicalplus.com'
+            ELSE canonical_url
+          END,
+          updated_at = NOW()
+        WHERE
+          meta_title IN (
+            'CevreDent - Dental Clinic in Turkey',
+            'Blue - Dental Clinic in Turkey'
+          )
+          OR meta_description = 'Affordable dental implants, veneers, crowns, and smile makeovers in Turkey.'
+          OR canonical_url = 'https://dental.cevredentalturkey.com'
+      `
+    );
+
+    await client.query(
+      `
+        UPDATE sections
+        SET
+          heading = CASE
+            WHEN heading = 'CevreDent Service Details Content'
+              THEN 'Blue Medical Plus Service Details'
+            ELSE heading
+          END,
+          description = CASE
+            WHEN description = 'with CevreDent Clinic''s Affordable Services'
+              THEN 'with Blue Medical Plus'
+            ELSE description
+          END,
+          button_url = CASE
+            WHEN button_url = $1 THEN $2
+            ELSE button_url
+          END,
+          updated_at = NOW()
+        WHERE
+          heading = 'CevreDent Service Details Content'
+          OR description = 'with CevreDent Clinic''s Affordable Services'
+          OR button_url = $1
+      `,
+      [legacyCevreWhatsAppUrl, whatsappUrl]
+    );
+
+    await client.query(
+      `
+        UPDATE section_items
+        SET
+          subtitle = CASE
+            WHEN subtitle = 'CevreDent' THEN 'Blue Medical Plus'
+            ELSE subtitle
+          END,
+          description = CASE
+            WHEN description = 'Discover CevreDent''s full range of dental services, including restorations, procedures, and solutions designed to suit all of your dental requirements.'
+              THEN 'Discover Blue Medical Plus''s full range of dental services, including restorations, procedures, and solutions designed to suit all of your dental requirements.'
+            ELSE description
+          END,
+          updated_at = NOW()
+        WHERE
+          subtitle = 'CevreDent'
+          OR description = 'Discover CevreDent''s full range of dental services, including restorations, procedures, and solutions designed to suit all of your dental requirements.'
+      `
+    );
+  });
 }
 
 async function seedCms() {
@@ -1179,8 +1377,7 @@ async function seedCms() {
       "/assets/images/image-022.webp",
       "/assets/images/image-023.webp",
       "/assets/images/image-024.webp",
-      "/assets/images/image-025.webp",
-      "/assets/images/image-005.png"
+      "/assets/images/image-025.webp"
     ];
 
     for (const mediaUrl of mediaFiles) {
@@ -1191,6 +1388,7 @@ async function seedCms() {
             site_key, file_name, original_name, url, mime_type, size_bytes, category
           )
           VALUES ($1, $2, $3, $4, 'image/*', 0, 'seed')
+          ON CONFLICT (site_key, file_name) DO NOTHING
         `,
         [defaultSiteKey, originalName, originalName, mediaUrl]
       );
@@ -1200,6 +1398,7 @@ async function seedCms() {
       `
         INSERT INTO admin_users (name, email, password_hash, role, is_active)
         VALUES ($1, $2, $3, 'super_admin', TRUE)
+        ON CONFLICT (email) DO NOTHING
       `,
       ["Primary Admin", "admin@bluemedicalplus.local", bcrypt.hashSync("Admin123!", 10)]
     );
@@ -1468,40 +1667,44 @@ async function cloneLocaleContent(siteKey: SiteKey, locale: string, sourceLocale
 async function ensureHeaderSection(siteKey: SiteKey, locale: string) {
   await initCms();
 
-  const headerResult = await pool.query(
-    `
-      SELECT id
-      FROM sections
-      WHERE site_key = $1 AND section_key = 'header' AND locale = $2
-      LIMIT 1
-    `,
-    [siteKey, locale]
-  );
-  const headerItemsResult = await pool.query(
-    `
-      SELECT COUNT(*)::int AS count
-      FROM section_items
-      WHERE site_key = $1 AND section_key = 'header' AND locale = $2
-    `,
-    [siteKey, locale]
-  );
-
-  if (headerResult.rowCount && headerItemsResult.rows[0]?.count > 0) {
-    return;
-  }
-
-  const heroResult = await pool.query(
-    `
-      SELECT settings_json
-      FROM sections
-      WHERE site_key = $1 AND section_key = 'hero' AND locale = $2
-      LIMIT 1
-    `,
-    [siteKey, locale]
-  );
-  const headerLinks = getLegacyHeroNavLinks(heroResult.rows[0]?.settings_json);
-
   await withTransaction(async (client) => {
+    await lockCmsScope(client, "ensure-header-section", siteKey, locale);
+
+    const [headerResult, headerItemsResult, heroResult] = await Promise.all([
+      client.query(
+        `
+          SELECT id
+          FROM sections
+          WHERE site_key = $1 AND section_key = 'header' AND locale = $2
+          LIMIT 1
+        `,
+        [siteKey, locale]
+      ),
+      client.query(
+        `
+          SELECT COUNT(*)::int AS count
+          FROM section_items
+          WHERE site_key = $1 AND section_key = 'header' AND locale = $2
+        `,
+        [siteKey, locale]
+      ),
+      client.query(
+        `
+          SELECT settings_json
+          FROM sections
+          WHERE site_key = $1 AND section_key = 'hero' AND locale = $2
+          LIMIT 1
+        `,
+        [siteKey, locale]
+      )
+    ]);
+
+    if (headerResult.rowCount && headerItemsResult.rows[0]?.count > 0) {
+      return;
+    }
+
+    const headerLinks = getLegacyHeroNavLinks(heroResult.rows[0]?.settings_json);
+
     if (!headerResult.rowCount) {
       await client.query(
         `
@@ -1512,6 +1715,7 @@ async function ensureHeaderSection(siteKey: SiteKey, locale: string) {
             $1, 'header', $2, 'Header', 'navigation', -1, TRUE, 'Header', '', '', '', '', '',
             NULL, NOW()
           )
+          ON CONFLICT (site_key, section_key, locale) DO NOTHING
         `,
         [siteKey, locale]
       );
@@ -1540,6 +1744,8 @@ async function ensureExtendedSections(siteKey: SiteKey, locale: string) {
   const sections = getExtendedSectionSeeds();
 
   await withTransaction(async (client) => {
+    await lockCmsScope(client, "ensure-extended-sections", siteKey, locale);
+
     for (const section of sections) {
       const sectionResult = await client.query(
         `
@@ -1628,30 +1834,50 @@ async function ensureExtendedSections(siteKey: SiteKey, locale: string) {
 
 async function ensureLocaleContent(siteKey: SiteKey, locale: string) {
   const normalizedLocale = normalizeCmsLocale(locale);
-  await initCms();
+  const contentKey = `${siteKey}:${normalizedLocale}`;
+  const existingPromise = localeContentPromises.get(contentKey);
 
-  const localeExists = await pool.query("SELECT code FROM locales WHERE code = $1 LIMIT 1", [
-    normalizedLocale
-  ]);
-
-  if (!localeExists.rowCount) {
-    await pool.query(
-      `
-        INSERT INTO locales (code, label, direction, is_default, is_active)
-        VALUES ($1, $2, 'ltr', FALSE, TRUE)
-      `,
-      [normalizedLocale, normalizedLocale.toUpperCase()]
-    );
+  if (existingPromise) {
+    await existingPromise;
+    return;
   }
 
-  await ensureSiteBaseContent(siteKey);
+  const contentPromise = (async () => {
+    await initCms();
 
-  if (normalizedLocale !== "en") {
-    await cloneLocaleContent(siteKey, normalizedLocale);
+    const localeExists = await pool.query("SELECT code FROM locales WHERE code = $1 LIMIT 1", [
+      normalizedLocale
+    ]);
+
+    if (!localeExists.rowCount) {
+      await pool.query(
+        `
+          INSERT INTO locales (code, label, direction, is_default, is_active)
+          VALUES ($1, $2, 'ltr', FALSE, TRUE)
+        `,
+        [normalizedLocale, normalizedLocale.toUpperCase()]
+      );
+    }
+
+    await ensureSiteBaseContent(siteKey);
+
+    if (normalizedLocale !== "en") {
+      await cloneLocaleContent(siteKey, normalizedLocale);
+    }
+
+    await ensureHeaderSection(siteKey, normalizedLocale);
+    await ensureExtendedSections(siteKey, normalizedLocale);
+  })();
+
+  localeContentPromises.set(contentKey, contentPromise);
+
+  try {
+    await contentPromise;
+  } finally {
+    if (localeContentPromises.get(contentKey) === contentPromise) {
+      localeContentPromises.delete(contentKey);
+    }
   }
-
-  await ensureHeaderSection(siteKey, normalizedLocale);
-  await ensureExtendedSections(siteKey, normalizedLocale);
 }
 
 export async function getSiteSettings(

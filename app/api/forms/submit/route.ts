@@ -90,7 +90,18 @@ function buildWhatsAppRedirect(baseLink: string, fields: Record<string, string>)
     message ? `Message: ${message}` : "",
     prize ? `Prize: ${prize}` : ""
   ].filter(Boolean);
-  return buildWhatsAppApiUrl(baseLink, lines.join("\n"));
+  return buildWhatsAppApiUrl(baseLink, lines.join("\n"), { replaceText: true });
+}
+
+function buildSpinWhatsAppRedirect(baseLink: string, fields: Record<string, string>) {
+  const name = pickFirstFilled(fields, ["fullName", "name"]);
+  const prize = pickFirstFilled(fields, ["prize", "spinPrize"]);
+  const lines = [
+    name ? `Name: ${name}` : "",
+    prize ? `Prize: ${prize}` : ""
+  ].filter(Boolean);
+
+  return buildWhatsAppApiUrl(baseLink, lines.join("\n"), { replaceText: true });
 }
 
 function resolveSiteContext(fields: Record<string, string>) {
@@ -188,11 +199,14 @@ export async function POST(request: Request) {
     siteWhatsappUrl = "";
   }
 
-  const redirectTo = buildWhatsAppRedirect(cleaned.whatsappUrl || siteWhatsappUrl, storedPayload);
+  const whatsappUrl = isSpin
+    ? buildSpinWhatsAppRedirect(cleaned.whatsappUrl || siteWhatsappUrl, storedPayload)
+    : buildWhatsAppRedirect(cleaned.whatsappUrl || siteWhatsappUrl, storedPayload);
 
   return Response.json({
     ok: true,
-    redirectTo,
+    whatsappUrl,
+    redirectTo: whatsappUrl,
     thankYouUrl: getSitePagePath(siteKey, locale, "thankyou")
   });
 }

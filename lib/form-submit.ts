@@ -245,11 +245,13 @@ export async function submitFormPayload(payload: FormPayload, options: SubmitOpt
       return { ok: false, ...data };
     }
 
-    if (data.redirectTo) {
+    const whatsappUrl = data.whatsappUrl || data.redirectTo;
+
+    if (whatsappUrl) {
       if (popup) {
-        popup.location.replace(data.redirectTo);
+        popup.location.replace(whatsappUrl);
       } else if (typeof window !== "undefined") {
-        window.open(data.redirectTo, "_blank", "noopener,noreferrer");
+        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
       }
     } else {
       popup?.close();

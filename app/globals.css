@@ -1087,6 +1087,13 @@ html {
   font-size: 0.82rem;
 }
 
+.lucky-spin-section__form-error {
+  margin: 0.25rem 0 0;
+  color: #fecaca;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
 .lpbm-hero__textarea {
   min-height: 7.25rem;
   resize: vertical;
@@ -1631,6 +1638,7 @@ html {
   background: #2a3089;
   color: #ffffff;
   padding-block: 5.5rem;
+  scroll-margin-top: 7.5rem;
 }
 
 .lucky-spin-section__bg,

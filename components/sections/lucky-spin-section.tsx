@@ -6,11 +6,9 @@ import "react-phone-number-input/style.css";
 import type { Section } from "@/lib/cms";
 import {
   buildFormPayload,
-  openSubmissionPopup,
-  submitFormPayload,
   validateFormPayload
 } from "@/lib/form-submit";
-import { extractSiteLocaleFromPathname, getSitePagePath } from "@/lib/sites";
+import { LUCKY_SPIN_SECTION_ID } from "@/lib/lucky-spin";
 
 type LuckySpinSectionProps = {
   section: Section;
@@ -27,6 +25,31 @@ const wheelColors = [
   "#c69062",
   "#7d4e31"
 ];
+
+const SPIN_DURATION_MS = 3600;
+
+function getSubmissionErrorMessage(errorCode?: string) {
+  switch (errorCode) {
+    case "MISSING_CONTACT_INFO":
+      return "Please enter your full name and phone number.";
+    case "INVALID_PHONE":
+      return "Please enter a valid phone number.";
+    case "INVALID_EMAIL":
+      return "Please enter a valid email address.";
+    default:
+      return "We couldn't complete your spin submission. Please try again.";
+  }
+}
+
+function waitForNextPaint() {
+  if (typeof window === "undefined") {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    window.requestAnimationFrame(() => resolve());
+  });
+}
 
 function polarToCartesian(
   centerX: number,
@@ -105,6 +128,7 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
     phone?: string;
     email?: string;
   }>({});
+  const [formError, setFormError] = useState("");
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState<string | undefined>("+90");
 
@@ -171,17 +195,17 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
       } = {};
       nextFieldErrors[validation.field] = validation.text;
       setFieldErrors(nextFieldErrors);
+      setFormError("");
       return;
     }
 
     setFieldErrors({});
+    setFormError("");
     setIsSubmitting(true);
     setIsSpinning(true);
     setSelectedPrize("");
     setResult(spinLoadingLabel);
 
-    const popup = openSubmissionPopup();
-    const popupOptions = popup ? { popup } : {};
     const selectedIndex = Math.floor(Math.random() * prizes.length);
     const chosenPrize = prizes[selectedIndex] || "";
     const normalizedRotation = ((rotation % 360) + 360) % 360;
@@ -192,44 +216,58 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
 
     setRotation(nextRotation);
 
-    window.setTimeout(async () => {
-      setSelectedPrize(chosenPrize);
-      setResult(`${resultLabel}: ${chosenPrize}`);
-      setIsSpinning(false);
+    await new Promise((resolve) => window.setTimeout(resolve, SPIN_DURATION_MS));
 
-      const submitResult = await submitFormPayload(
-        {
+    setSelectedPrize(chosenPrize);
+    setResult(`${resultLabel}: ${chosenPrize}`);
+    setIsSpinning(false);
+
+    await waitForNextPaint();
+
+    try {
+      const response = await fetch("/api/forms/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
           ...basePayload,
           ...validation.payload,
           prize: chosenPrize
-        },
-        {
-          ...popupOptions,
-          skipRedirect: true
-        }
-      );
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      const nextWhatsappUrl = String(data?.whatsappUrl || "");
+      const thankYouUrl = String(data?.thankYouUrl || "");
 
-      if (!submitResult.ok) {
+      if (!response.ok || !data?.ok || !nextWhatsappUrl) {
+        setFormError(getSubmissionErrorMessage(data?.error));
         setIsSubmitting(false);
         return;
       }
 
-      if (typeof window !== "undefined") {
-        window.setTimeout(() => {
-          const routeContext = extractSiteLocaleFromPathname(window.location.pathname);
-          window.location.assign(
-            String(
-              submitResult.thankYouUrl ||
-                getSitePagePath(routeContext.siteKey, routeContext.locale, "thankyou")
-            )
-          );
-        }, 900);
+      const openedWindow = window.open(nextWhatsappUrl, "_blank", "noopener,noreferrer");
+
+      if (!openedWindow) {
+        setFormError("Please allow pop-ups to continue to WhatsApp.");
+        setIsSubmitting(false);
+        return;
       }
-    }, 3600);
+
+      if (thankYouUrl) {
+        window.location.assign(thankYouUrl);
+        return;
+      }
+
+      setIsSubmitting(false);
+    } catch {
+      setFormError(getSubmissionErrorMessage());
+      setIsSubmitting(false);
+    }
   }
 
   return (
-    <section id="lucky-spin" className="lucky-spin-section">
+    <section id={LUCKY_SPIN_SECTION_ID} className="lucky-spin-section">
       {section.imageUrl ? (
         <img
           src={section.imageUrl}
@@ -247,7 +285,9 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
           </p>
           <h2 className="lucky-spin-section__title">{section.heading}</h2>
           <p className="lucky-spin-section__description">{section.description}</p>
-          <p className="lucky-spin-section__result">{result}</p>
+          <p className="lucky-spin-section__result" aria-live="polite">
+            {result}
+          </p>
         </div>
 
         <div className="lucky-spin-section__wheel-area">
@@ -309,6 +349,9 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
                 if (fieldErrors.fullName) {
                   setFieldErrors((current) => ({ ...current, fullName: undefined }));
                 }
+                if (formError) {
+                  setFormError("");
+                }
               }}
               className={`lucky-spin-section__input${
                 fieldErrors.fullName ? " lucky-spin-section__input--error" : ""
@@ -325,6 +368,9 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
                 setPhoneNumber(value);
                 if (fieldErrors.phone) {
                   setFieldErrors((current) => ({ ...current, phone: undefined }));
+                }
+                if (formError) {
+                  setFormError("");
                 }
               }}
               className={`phone-input lucky-spin-section__phone-input${
@@ -347,6 +393,11 @@ export function LuckySpinSection({ section, whatsappUrl }: LuckySpinSectionProps
             >
               {isSpinning || isSubmitting ? spinLoadingLabel : spinLabel}
             </button>
+            {formError ? (
+              <p className="lucky-spin-section__form-error" role="alert">
+                {formError}
+              </p>
+            ) : null}
           </form>
           <p className="lucky-spin-section__privacy">{formPrivacyNote}</p>
           {selectedPrize ? (
