@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Laptop, MessageSquare, User } from "lucide-react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import type { Section } from "@/lib/cms";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type ConsultationCtaSectionProps = {
   section: Section;
@@ -12,8 +12,6 @@ export function ConsultationCtaSection({
   section,
   whatsappUrl
 }: ConsultationCtaSectionProps) {
-  const ctaUrl = section.buttonUrl || whatsappUrl;
-
   return (
     <section className="bg-muted/30 py-16">
       <div className="container-dental">
@@ -31,13 +29,11 @@ export function ConsultationCtaSection({
               </p>
             </div>
             <div className="pt-4">
-              <a
-                href={ctaUrl}
-                {...getWhatsAppLinkProps(ctaUrl)}
+              <ConsultationModalTrigger
                 className="inline-flex min-w-[160px] items-center justify-center rounded-md bg-primary px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-primary/90"
               >
                 {section.buttonLabel}
-              </a>
+              </ConsultationModalTrigger>
             </div>
           </div>
 

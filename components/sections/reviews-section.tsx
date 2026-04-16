@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import type { Section } from "@/lib/cms";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type ReviewsSectionProps = {
   section: Section;
@@ -128,9 +128,9 @@ export function ReviewsSection({ section, provider, whatsappUrl }: ReviewsSectio
         </div>
 
         <div className="reviews-section__cta-wrap">
-          <a href={whatsappUrl} {...getWhatsAppLinkProps(whatsappUrl)} className="reviews-section__cta">
+          <ConsultationModalTrigger className="reviews-section__cta">
             {section.buttonLabel || "Free Consultation"}
-          </a>
+          </ConsultationModalTrigger>
         </div>
       </div>
     </section>

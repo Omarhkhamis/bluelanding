@@ -3,8 +3,8 @@
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import type { Section, SectionItem } from "@/lib/cms";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type ServicesSectionProps = {
   section: Section;
@@ -82,7 +82,6 @@ function ServiceCard({ service, whatsappUrl }: ServiceCardProps) {
   const items = (service.settings.items as string[] | undefined) || [];
   const buttonLabel =
     (service.settings.buttonLabel as string | undefined) || "Get More Information";
-  const serviceLink = service.linkUrl || whatsappUrl;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
@@ -97,13 +96,11 @@ function ServiceCard({ service, whatsappUrl }: ServiceCardProps) {
           />
         </div>
         <div className="absolute inset-x-0 bottom-0">
-          <a
-            href={serviceLink}
-            {...getWhatsAppLinkProps(serviceLink)}
+          <ConsultationModalTrigger
             className="block bg-dental-navy px-4 py-3 text-center text-lg font-bold text-white transition-colors hover:bg-primary"
           >
             {service.title}
-          </a>
+          </ConsultationModalTrigger>
         </div>
       </div>
       <div className="p-6 text-center">
@@ -118,23 +115,19 @@ function ServiceCard({ service, whatsappUrl }: ServiceCardProps) {
               className="flex items-start justify-center gap-2 text-left"
             >
               <ChevronRight className="mt-0.5 h-5 w-5 shrink-0 text-gray-400" />
-              <a
-                href={serviceLink}
-                {...getWhatsAppLinkProps(serviceLink)}
+              <ConsultationModalTrigger
                 className="text-sm text-dental-navy underline hover:text-primary"
               >
                 {item}
-              </a>
+              </ConsultationModalTrigger>
             </li>
           ))}
         </ul>
-        <a
-          href={serviceLink}
-          {...getWhatsAppLinkProps(serviceLink)}
+        <ConsultationModalTrigger
           className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
         >
           {buttonLabel}
-        </a>
+        </ConsultationModalTrigger>
       </div>
     </div>
   );

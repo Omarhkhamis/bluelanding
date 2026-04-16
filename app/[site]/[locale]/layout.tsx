@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { notFound } from "next/navigation";
 import { getCustomCodes, getSeoSettings, getSiteSettings } from "@/lib/cms";
+import { ConsultationModalProvider } from "@/components/consultation-modal";
 import { normalizeLocaleSegment, parseSiteKey } from "@/lib/sites";
 
 function getMetadataBase(baseUrl: string) {
@@ -62,8 +63,11 @@ export default async function PublicSiteLayout({
   children: React.ReactNode;
   params: Promise<{ site: string; locale: string }>;
 }>) {
-  const { siteKey } = await resolveRouteContext(params);
-  const codes = await getCustomCodes(siteKey);
+  const { siteKey, locale } = await resolveRouteContext(params);
+  const [codes, siteSettings] = await Promise.all([
+    getCustomCodes(siteKey),
+    getSiteSettings(siteKey, locale)
+  ]);
   const headCodes = codes.filter((code) => code.isActive && code.placement === "HEAD");
   const bodyStartCodes = codes.filter(
     (code) => code.isActive && code.placement === "BODY_START"
@@ -86,7 +90,9 @@ export default async function PublicSiteLayout({
       {bodyStartCodes.map((code) => (
         <div key={code.id} dangerouslySetInnerHTML={{ __html: code.code }} />
       ))}
-      {children}
+      <ConsultationModalProvider locale={locale} whatsappUrl={siteSettings.whatsappUrl}>
+        {children}
+      </ConsultationModalProvider>
       {bodyEndCodes.map((code) => (
         <div key={code.id} dangerouslySetInnerHTML={{ __html: code.code }} />
       ))}

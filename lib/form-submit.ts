@@ -10,6 +10,10 @@ type SubmitOptions = {
   popup?: Window | null;
 };
 
+type ValidationOptions = {
+  requireEmail?: boolean;
+};
+
 type ValidationResult =
   | {
       ok: true;
@@ -160,7 +164,10 @@ export function buildFormPayload(
   return payload;
 }
 
-export function validateFormPayload(payload: FormPayload): ValidationResult {
+export function validateFormPayload(
+  payload: FormPayload,
+  options: ValidationOptions = {}
+): ValidationResult {
   const fullName = pickFirstFilled(payload, ["fullName", "name"]);
   const phone = pickFirstFilled(payload, ["phone"]);
   const email = pickFirstFilled(payload, ["email"]);
@@ -189,6 +196,15 @@ export function validateFormPayload(payload: FormPayload): ValidationResult {
       field: "phone",
       title: "Invalid phone",
       text: "Please enter a valid phone number."
+    };
+  }
+
+  if (options.requireEmail && !email) {
+    return {
+      ok: false,
+      field: "email",
+      title: "Missing details",
+      text: "Please enter your email address."
     };
   }
 

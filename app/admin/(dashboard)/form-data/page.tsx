@@ -127,6 +127,8 @@ export default async function AdminFormDataPage({
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Service</th>
+                  <th className="px-4 py-3">Visit</th>
                   <th className="px-4 py-3">Message</th>
                   <th className="px-4 py-3">Submitted</th>
                 </tr>
@@ -141,6 +143,12 @@ export default async function AdminFormDataPage({
                     <td className="px-4 py-3">{record.fullName || "—"}</td>
                     <td className="px-4 py-3">{record.email || "—"}</td>
                     <td className="px-4 py-3">{record.phone || "—"}</td>
+                    <td className="px-4 py-3">
+                      {String(record.payload.serviceInterest || "—")}
+                    </td>
+                    <td className="px-4 py-3">
+                      {String(record.payload.visitTimeline || "—")}
+                    </td>
                     <td className="px-4 py-3">
                       {record.message ? (
                         <p className="max-w-sm whitespace-pre-wrap text-sm text-foreground/80">

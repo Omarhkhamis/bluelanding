@@ -22,7 +22,17 @@ export async function GET(request: Request) {
     to: filters.to
   });
 
-  const header = ["form", "locale", "name", "email", "phone", "message", "submitted"];
+  const header = [
+    "form",
+    "locale",
+    "name",
+    "email",
+    "phone",
+    "service",
+    "visit_timing",
+    "message",
+    "submitted"
+  ];
   const rows = records.map((record) =>
     [
       escapeCsvValue(record.formName || record.source),
@@ -30,6 +40,8 @@ export async function GET(request: Request) {
       escapeCsvValue(record.fullName || ""),
       escapeCsvValue(record.email || ""),
       escapeCsvValue(record.phone || ""),
+      escapeCsvValue(record.payload.serviceInterest || ""),
+      escapeCsvValue(record.payload.visitTimeline || ""),
       escapeCsvValue(record.message || ""),
       escapeCsvValue(record.createdAt || "")
     ].join(",")

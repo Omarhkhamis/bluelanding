@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import { getFooterNavItems } from "@/lib/footer-nav";
 import { getSitePagePath, type SiteKey } from "@/lib/sites";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 import type { FooterSettings, Section } from "@/lib/cms";
 
 const socialIconMap: Record<string, string> = {
@@ -69,13 +69,11 @@ export function FooterLpbm({
                 </a>
               );
             })}
-            <a
-              href={whatsappUrl}
-              {...getWhatsAppLinkProps(whatsappUrl)}
+            <ConsultationModalTrigger
               className="lpbm-footer__badge"
             >
               {String(settings.badge || "International Patient Support")}
-            </a>
+            </ConsultationModalTrigger>
           </div>
         </div>
 

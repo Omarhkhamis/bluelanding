@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ExternalLink, Phone } from "lucide-react";
 import { useMemo } from "react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import type { FooterSettings, Section } from "@/lib/cms";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 const socialIconMap: Record<string, string> = {
   facebook: "M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z",
@@ -83,13 +83,11 @@ export function HeaderLpbm({
             </a>
           </div>
 
-          <a
-            href={whatsappUrl}
-            {...getWhatsAppLinkProps(whatsappUrl)}
+          <ConsultationModalTrigger
             className="lpbm-header__cta"
           >
             {ctaLabel}
-          </a>
+          </ConsultationModalTrigger>
         </div>
       </div>
     </header>

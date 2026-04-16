@@ -3,8 +3,8 @@
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import type { Section } from "@/lib/cms";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type BeforeAfterSectionProps = {
   section: Section;
@@ -20,7 +20,6 @@ export function BeforeAfterSection({ section, whatsappUrl }: BeforeAfterSectionP
     }
   });
   const slides = section.items.filter((item) => item.imageUrl.trim().length > 0);
-  const ctaUrl = section.buttonUrl || whatsappUrl;
 
   return (
     <section id="before-after" className="section-padding bg-background">
@@ -70,13 +69,11 @@ export function BeforeAfterSection({ section, whatsappUrl }: BeforeAfterSectionP
         </div>
 
         <div className="text-center">
-          <a
-            href={ctaUrl}
-            {...getWhatsAppLinkProps(ctaUrl)}
+          <ConsultationModalTrigger
             className="inline-flex h-11 items-center justify-center rounded-md bg-dental-navy px-8 text-sm font-medium text-white transition-colors hover:bg-dental-navy/90"
           >
             {section.buttonLabel || "Get the Best Dental Treatment"}
-          </a>
+          </ConsultationModalTrigger>
         </div>
       </div>
     </section>

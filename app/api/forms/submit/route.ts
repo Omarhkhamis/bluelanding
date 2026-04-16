@@ -82,12 +82,24 @@ function isValidEmail(value: string) {
 function buildWhatsAppRedirect(baseLink: string, fields: Record<string, string>) {
   const name = pickFirstFilled(fields, ["fullName", "name"]);
   const message = pickFirstFilled(fields, ["message", "notes", "details"]);
+  const serviceInterest = pickFirstFilled(fields, [
+    "serviceInterest",
+    "service",
+    "treatmentService"
+  ]);
+  const visitTimeline = pickFirstFilled(fields, [
+    "visitTimeline",
+    "travelTiming",
+    "arrivalTiming"
+  ]);
   const prize = pickFirstFilled(fields, ["prize", "spinPrize"]);
   const phone = pickFirstFilled(fields, ["phone"]);
   const lines = [
     name ? `Name: ${name}` : "",
     phone ? `Phone: ${phone}` : "",
-    message ? `Message: ${message}` : "",
+    serviceInterest ? `Service: ${serviceInterest}` : "",
+    visitTimeline ? `Visit timing: ${visitTimeline}` : "",
+    !serviceInterest && !visitTimeline && message ? `Message: ${message}` : "",
     prize ? `Prize: ${prize}` : ""
   ].filter(Boolean);
   return buildWhatsAppApiUrl(baseLink, lines.join("\n"), { replaceText: true });

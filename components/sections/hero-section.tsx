@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { ChevronDown } from "lucide-react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import { HeroLpbm } from "@/components/hero-lpbm";
 import type { Section } from "@/lib/cms";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type HeroSectionProps = {
   section: Section;
@@ -42,13 +42,11 @@ export function HeroSection({ section, whatsappUrl }: HeroSectionProps) {
           <p className="mb-6 text-base text-white/80 md:mb-10 md:text-xl">
             {section.description}
           </p>
-          <a
-            href={whatsappUrl}
-            {...getWhatsAppLinkProps(whatsappUrl)}
+          <ConsultationModalTrigger
             className="inline-flex w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-dental transition-all duration-300 hover:shadow-dental-lg md:w-auto md:max-w-none md:px-8 md:py-4 md:text-base"
           >
             Get the Best Dental Solution
-          </a>
+          </ConsultationModalTrigger>
           <a href="#why" className="mt-8 block md:mt-16">
             <ChevronDown className="mx-auto h-8 w-8 text-white md:h-10 md:w-10" />
           </a>

@@ -1,12 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import { FormBenefits } from "@/components/form-benefits";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import type { Section } from "@/lib/cms";
 import { buildFormPayload, submitFormPayload } from "@/lib/form-submit";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type HeroLpbmProps = {
   section: Section;
@@ -72,9 +72,9 @@ export function HeroLpbm({ section, whatsappUrl }: HeroLpbmProps) {
             <span>{titleLine2}</span>
           </h1>
           <p className="lpbm-hero__subtitle">{subtitle}</p>
-          <a href={whatsappUrl} {...getWhatsAppLinkProps(whatsappUrl)} className="lpbm-hero__cta">
+          <ConsultationModalTrigger className="lpbm-hero__cta">
             {ctaLabel}
-          </a>
+          </ConsultationModalTrigger>
         </div>
 
         <div className="lpbm-hero__card">

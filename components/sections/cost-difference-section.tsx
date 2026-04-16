@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import type { Section } from "@/lib/cms";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 type CostDifferenceSectionProps = {
   section: Section;
@@ -23,7 +23,6 @@ export function CostDifferenceSection({
   const detailImageAlt = String(
     settings.detailImageAlt || headingLine2 || "Treatment detail"
   ).trim();
-  const ctaUrl = String(section.buttonUrl || whatsappUrl || "").trim();
   const buttonLabel = String(section.buttonLabel || "Get Implant Quote →").trim();
 
   if (!headingLine1 && !headingLine2 && !paragraphOne && !mainImage) {
@@ -66,15 +65,13 @@ export function CostDifferenceSection({
               </p>
             ) : null}
 
-            {ctaUrl ? (
-              <a
-                href={ctaUrl}
-                {...getWhatsAppLinkProps(ctaUrl)}
+            {buttonLabel ? (
+              <ConsultationModalTrigger
                 className="inline-flex w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-dental transition-all duration-300 hover:shadow-dental-lg md:w-auto md:max-w-none md:px-8 md:py-4 md:text-base"
               >
                 <MessageCircle className="h-4 w-4" aria-hidden="true" />
                 {buttonLabel}
-              </a>
+              </ConsultationModalTrigger>
             ) : null}
           </div>
 

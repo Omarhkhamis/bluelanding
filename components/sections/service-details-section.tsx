@@ -2,9 +2,9 @@
 
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ConsultationModalTrigger } from "@/components/consultation-modal";
 import { ConfiguredSectionIcon } from "@/lib/admin-icons";
 import type { Section } from "@/lib/cms";
-import { getWhatsAppLinkProps } from "@/lib/whatsapp";
 
 const fallbackIcons = ["refresh", "message-square", "car", "building", "plane", "heart-handshake"];
 
@@ -67,13 +67,11 @@ export function ServiceDetailsSection({
           })}
         </div>
         <div className="text-center">
-          <a
-            href={whatsappUrl}
-            {...getWhatsAppLinkProps(whatsappUrl)}
+          <ConsultationModalTrigger
             className="inline-flex min-w-[200px] items-center justify-center rounded-md bg-primary px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-primary/90"
           >
             Get Price Information
-          </a>
+          </ConsultationModalTrigger>
         </div>
       </div>
     </section>
